@@ -1,0 +1,47 @@
+name: Docker Publishing
+on:
+  push:
+    branches:
+      - '*'
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  publish-app:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish App to Registry
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.pcicdevops_at_dockerhub_username }}
+          password: ${{ secrets.pcicdevops_at_dockerhub_password }}
+          repository: pcic/bbox-demo-app
+          tag_with_ref: true
+          dockerfile: docker/app/Dockerfile
+
+  publish-data-import:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish Data Import to Registry
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.pcicdevops_at_dockerhub_username }}
+          password: ${{ secrets.pcicdevops_at_dockerhub_password }}
+          repository: pcic/bbox-demo-data-import
+          tag_with_ref: true
+          dockerfile: docker/data-import/Dockerfile
+
+  publish-postgis:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish PostGIS to Registry
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.pcicdevops_at_dockerhub_username }}
+          password: ${{ secrets.pcicdevops_at_dockerhub_password }}
+          repository: pcic/bbox-demo-postgis
+          tag_with_ref: true
+          dockerfile: docker/PostGIS/Dockerfile
