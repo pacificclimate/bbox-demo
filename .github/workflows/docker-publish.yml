@@ -7,41 +7,43 @@ on:
       - '[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
-  publish-app:
+  publish-images:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
-      - name: Publish App to Registry
-        uses: docker/build-push-action@v1
-        with:
-          username: ${{ secrets.pcicdevops_at_dockerhub_username }}
-          password: ${{ secrets.pcicdevops_at_dockerhub_password }}
-          repository: pcic/bbox-demo-app
-          tag_with_ref: true
-          dockerfile: docker/app/Dockerfile
 
-  publish-data-import:
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v4
-      - name: Publish Data Import to Registry
-        uses: docker/build-push-action@v1
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.pcicdevops_at_dockerhub_username }}
           password: ${{ secrets.pcicdevops_at_dockerhub_password }}
-          repository: pcic/bbox-demo-data-import
-          tag_with_ref: true
-          dockerfile: docker/data-import/Dockerfile
 
-  publish-postgis:
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v4
-      - name: Publish PostGIS to Registry
-        uses: docker/build-push-action@v1
+      - name: Build and Publish Demo App
+        uses: docker/build-push-action@v4
         with:
-          username: ${{ secrets.pcicdevops_at_dockerhub_username }}
-          password: ${{ secrets.pcicdevops_at_dockerhub_password }}
-          repository: pcic/bbox-demo-postgis
-          tag_with_ref: true
-          dockerfile: docker/PostGIS/Dockerfile
+          context: .
+          file: docker/app/Dockerfile
+          push: true
+          tags: |
+            pcic/bbox-demo-app:${{ github.ref_name }}
+            ${{ github.ref_name == 'main' && 'pcic/bbox-demo-app:latest' || '' }}
+
+      - name: Build and Publish Data Import
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: docker/data-import/Dockerfile
+          push: true
+          tags: |
+            pcic/bbox-demo-data-import:${{ github.ref_name }}
+            ${{ github.ref_name == 'main' && 'pcic/bbox-demo-data-import:latest' || '' }}
+
+      - name: Build and Publish PostGIS
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: docker/PostGIS/Dockerfile
+          push: true
+          tags: |
+            pcic/bbox-demo-postgis:${{ github.ref_name }}
+            ${{ github.ref_name == 'main' && 'pcic/bbox-demo-postgis:latest' || '' }}
