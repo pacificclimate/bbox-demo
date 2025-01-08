@@ -1,0 +1,47 @@
+[webserver]
+loglevel = "Debug"
+[webserver.cors]
+allow_all_origins = true
+
+[[datasource]]
+name = "postgis_db"
+[datasource.postgis]
+url = "${DB_DSN}"
+
+[[grid]]
+json = "assets/BCAlbersCustomGrid.json"
+
+[[tileset]]
+name = "water_tiles"
+
+[[tileset.tms]]
+id = "BCAlbersCustomGrid"
+
+[tileset.postgis]
+datasource = "postgis_db"
+extent = [217522, 376304, 5660707, 4543560]
+
+# Rivers Layer
+[[tileset.postgis.layer]]
+name = "rivers"
+geometry_type = "LINESTRING"
+
+[[tileset.postgis.layer.query]]
+sql = """
+  SELECT  unique_fid, SubId, DowSubId, ST_SetSRID(geom, 3005) AS geom
+  FROM rivers
+  WHERE geom && ST_MakeEnvelope($1, $2, $3, $4, 3005)
+"""
+
+# Lakes Layer
+[[tileset.postgis.layer]]
+name = "lakes"
+geometry_type = "POLYGON"
+
+[[tileset.postgis.layer.query]]
+sql = """
+  SELECT unique_fid, SubId, Hylak_id, ST_SetSRID(geom, 3005) AS geom
+  FROM lakes
+  WHERE geom && ST_MakeEnvelope($1, $2, $3, $4, 3005)
+"""
+
