@@ -2,7 +2,7 @@
 set -e
 
 DB_PASSWORD=$(grep "bbox_postgres:bbox_user:" /app/.pgpass | cut -d: -f5)
-export POSTGRES_PASSWORD="${DB_PASSWORD}"
+
 # Create database and user, grant privileges, include extensions
 psql -v ON_ERROR_STOP=1 --username "postgres" <<-EOSQL
   CREATE DATABASE bbox_postgres;
