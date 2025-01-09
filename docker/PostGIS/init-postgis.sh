@@ -1,7 +1,23 @@
 #!/bin/bash
 set -e
 
+
+if [ -f /app/.pgpass ]; then
+    echo ".pgpass file exists"
+    ls -l /app/.pgpass
+else
+    echo "ERROR: .pgpass file not found!"
+    exit 1
+fi
+
 DB_PASSWORD=$(grep "bbox_postgres:bbox_user:" /app/.pgpass | cut -d: -f5)
+
+if [ -z "$DB_PASSWORD" ]; then
+    echo "ERROR: Failed to extract password from .pgpass"
+    exit 1
+else
+    echo "Successfully extracted password from .pgpass"
+fi
 
 # Create database and user, grant privileges, include extensions
 psql -v ON_ERROR_STOP=1 --username "postgres" <<-EOSQL
