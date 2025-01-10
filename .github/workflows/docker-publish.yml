@@ -48,12 +48,12 @@ jobs:
             pcic/bbox-demo-postgis:${{ github.ref_name }}
             ${{ github.ref_name == 'main' && 'pcic/bbox-demo-postgis:latest' || '' }}
       
-      - name: Build and Publish BBOX
+      - name: Build and Publish BBOX server
         uses: docker/build-push-action@v4
         with:
           context: .
           file: docker/BBOX/Dockerfile
           push: true
           tags: |
-            pcic/bbox-demo-BBOX:${{ github.ref_name }}
-            ${{ github.ref_name == 'main' && 'pcic/bbox-demo-BBOX:latest' || '' }}
+            pcic/bbox-demo-server:${{ github.ref_name }}
+            ${{ github.ref_name == 'main' && 'pcic/bbox-demo-server:latest' || '' }}
