@@ -54,7 +54,7 @@ const tileLayer = L.tileLayer('https://services.pacificclimate.org/tiles/bc-albe
 tileLayer.addTo(map);
 
 const vectorTileLayer = L.vectorGrid.protobuf(
-    'http://localhost:6767/xyz/water_tiles/{z}/{x}/{y}.mvt',
+    'https://beehive.pacificclimate.org/bbox-server/xyz/water_tiles/{z}/{x}/{y}.mvt',
     {
         vectorTileLayerStyles: {
             rivers: {
