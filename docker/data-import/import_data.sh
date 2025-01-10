@@ -44,7 +44,4 @@ psql "$DB_DSN" <<-EOSQL
   CREATE INDEX lakes_geom_idx ON lakes USING GIST(geom);
   VACUUM ANALYZE lakes;
 EOSQL
-
 echo "Data import complete."
-touch /data-ready/data-ready.flag
-chmod 666 /data-ready/data-ready.flag
