@@ -20,4 +20,4 @@ def test_bbox():
 
 if __name__ == "__main__":
     # Run the Flask app with debug mode enabled for easier debugging
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=8080, debug=True)

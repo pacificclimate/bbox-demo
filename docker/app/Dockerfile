@@ -11,6 +11,6 @@ RUN poetry install --no-root
 
 COPY ../../app /app
 
-EXPOSE 5000
+EXPOSE 8080
 
 CMD ["poetry", "run", "python", "app.py"]
