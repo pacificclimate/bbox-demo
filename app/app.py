@@ -1,10 +1,7 @@
 from flask import Flask, render_template
 import requests  # Ensure requests is imported
 
-app = Flask(
-    __name__,
-     static_url_path="/bbox-demo-app/static",
-     )
+app = Flask(__name__)
 
 
 @app.route("/")  # Map the index route
