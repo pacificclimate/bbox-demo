@@ -10,7 +10,7 @@ RUN apt-get update && \
         postgresql-client && \
     rm -rf /var/lib/apt/lists/*
 
-COPY docker/bbox-server/start-bbox-server.sh /usr/local/bin/start-bbox-server.sh
+COPY docker/BBOX/start-bbox-server.sh /usr/local/bin/start-bbox-server.sh
 RUN chmod +x /usr/local/bin/start-bbox-server.sh
 
 RUN mkdir -p /tmp/tilecache && chmod 777 /tmp/tilecache
