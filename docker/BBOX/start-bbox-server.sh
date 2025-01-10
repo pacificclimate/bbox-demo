@@ -16,4 +16,4 @@ echo "Data is ready. Substituting environment variables..."
 envsubst < /tmp/bbox.template.toml > /app/bbox.toml
 
 echo "Starting bbox-app..."
-exec bbox-app serve
+exec su www-data -s /bin/sh -c "bbox-app serve"

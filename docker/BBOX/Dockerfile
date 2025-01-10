@@ -15,9 +15,5 @@ RUN chmod +x /usr/local/bin/start-bbox-server.sh
 
 RUN mkdir -p /tmp/tilecache && chmod 777 /tmp/tilecache
 
-# Switch back to the bbox-server user 
-USER www-data
-
-
 ENTRYPOINT ["/usr/local/bin/start-bbox-server.sh"]
 
