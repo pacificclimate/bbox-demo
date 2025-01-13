@@ -45,11 +45,13 @@ const map = L.map('map', {
     ),
     minZoom: 0,
     maxZoom: 13,
-    center: [953827.1575, 1103631.1543],
+    center: [-17, 92],
     zoom: 6,
+    Attribution: '&copy; <a href="http://openstreetmap.org/copyright">OpenStreetMap</a> contributors',
 });
 const tileLayer = L.tileLayer('https://services.pacificclimate.org/tiles/bc-albers-lite/{z}/{x}/{y}.png', {
-    attribution: '&copy; Your Attribution',
+    Attribution: '&copy; <a href="http://openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+
 });
 tileLayer.addTo(map);
 
@@ -80,68 +82,123 @@ const vectorTileLayer = L.vectorGrid.protobuf(
     }
 );
 
+let hoverHighlight = null;
 let highlight = null;
+let highlightCleanupTimeout;
+
+vectorTileLayer.on('mouseover', (event) => {
+    const layerId = event.layer.properties.unique_fid;
+
+    if (highlight === layerId) {
+        map.getContainer().style.cursor = 'pointer';
+        return;
+    }
+
+    if (hoverHighlight === layerId) return;
+
+    hoverHighlight = layerId;
+
+    const layerName = event.layer.properties.hasOwnProperty('hylak_id') ? 'lakes' : 'rivers';
+    console.log('Hovering over:', layerName, layerId);
+
+    vectorTileLayer.setFeatureStyle(layerId, getHoverStyle(layerName));
+    map.getContainer().style.cursor = 'pointer';
+});
+
+vectorTileLayer.on('mouseout', (event) => {
+    const layerId = event.layer.properties.unique_fid;
+
+    if (hoverHighlight === layerId && highlight !== layerId) {
+        clearHoverHighlight();
+    }
+    map.getContainer().style.cursor = '';
+});
+
+vectorTileLayer.on('click', (event) => {
+    const properties = event.layer.properties;
+    const layerId = properties.unique_fid;
+    const clickedLatLng = event.latlng;
+
+    console.log('Clicked feature:', properties, 'LatLng:', clickedLatLng);
+
+    map.setView(clickedLatLng, map.getZoom());
+
+    L.popup()
+        .setLatLng(clickedLatLng)
+        .setContent(`<strong>SubId:</strong> ${properties.subid}`)
+        .openOn(map);
+
+    clearHoverHighlight();
+    clearHighlight();
+
+    highlight = layerId;
+    const layerName = properties.hasOwnProperty('hylak_id') ? 'lakes' : 'rivers';
+    console.log('Highlighting:', layerName, layerId);
+
+    vectorTileLayer.setFeatureStyle(highlight, getHighlightStyle(layerName));
+});
+
+map.on('zoomstart movestart', () => {
+    clearHoverHighlight();
+    if (highlightCleanupTimeout) {
+        clearTimeout(highlightCleanupTimeout);
+    }
+});
+
+map.on('zoomend moveend', () => {
+    if (highlight) {
+        highlightCleanupTimeout = setTimeout(() => {
+            const layerName = highlight.split('_')[0];
+            console.log('Reapplying highlight after zoom:', layerName, highlight);
+            vectorTileLayer.setFeatureStyle(highlight, getHighlightStyle(layerName));
+        }, 100);
+    }
+});
+
+const clearHoverHighlight = function () {
+    if (hoverHighlight) {
+        vectorTileLayer.resetFeatureStyle(hoverHighlight);
+        hoverHighlight = null;
+    }
+};
 
 const clearHighlight = function () {
     if (highlight) {
-        console.log(`Clearing highlight for: ${highlight}`);
         vectorTileLayer.resetFeatureStyle(highlight);
+        highlight = null;
     }
-    highlight = null;
+};
+
+const getHoverStyle = function (layerName) {
+    if (layerName === 'lakes') {
+        return {
+            weight: 5,
+            fillOpacity: 0.5,
+            fill: true,
+        };
+    }
+    return {
+        weight: 5,
+        opacity: 1,
+    };
 };
 
 const getHighlightStyle = function (layerName) {
     if (layerName === 'lakes') {
-        console.log("Styling lakes...");
         return {
             weight: 2,
             color: 'red',
             fillColor: 'red',
             fillOpacity: 0.7,
-            fill: true
+            fill: true,
         };
     }
     return {
         weight: 2,
         color: 'red',
-        opacity: 1
+        opacity: 1,
     };
 };
 
-vectorTileLayer.on('mouseover', (event) => {
-    const layerId = event.layer.properties.id;
-    vectorTileLayer.setFeatureStyle(layerId, {
-        weight: 5, // Temporarily increase the width
-        color: 'red'
-    });
-});
-
-// Revert to default on mouseout
-vectorTileLayer.on('mouseout', (event) => {
-    const layerId = event.layer.properties.id;
-    vectorTileLayer.resetFeatureStyle(layerId);
-});
-
-vectorTileLayer.on('click', (event) => {
-    const properties = event.layer.properties;
-    console.log('Clicked Feature Properties:', properties);
-    L.popup()
-        .setLatLng(event.latlng)
-        .setContent(`<strong>SubId:</strong> ${properties.subid}`)
-        .openOn(map);
-    // Clear previous highlight
-    clearHighlight();
-
-    // Use `unique_fid` for the highlight
-    highlight = properties.unique_fid;
-    console.log(`Setting highlight for: ${highlight}`);
-
-    // Apply the style
-    vectorTileLayer.setFeatureStyle(highlight, getHighlightStyle(properties.unique_fid.split('_')[0]));
-});
-
-
-
 vectorTileLayer.addTo(map);
 
-// map.on('click', clearHighlight);
