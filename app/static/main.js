@@ -1,3 +1,11 @@
+// Compatibility fix for newer Leaflet versions
+L.DomEvent.fakeStop = L.DomEvent.fakeStop || function (e) {
+    if (e.preventDefault) { e.preventDefault(); }
+    if (e.stopPropagation) { e.stopPropagation(); }
+    if (e.stop) { e.stop(); }
+    return this;
+};
+
 const map = L.map('map', {
 
     //     crs: new L.Proj.CRS(
@@ -47,158 +55,187 @@ const map = L.map('map', {
     maxZoom: 13,
     center: [-17, 92],
     zoom: 6,
+    updateWhenZooming: true,
+    zoomSnap: .1,
+    zoomDelta: .1,
     Attribution: '&copy; <a href="http://openstreetmap.org/copyright">OpenStreetMap</a> contributors',
 });
-const tileLayer = L.tileLayer('https://services.pacificclimate.org/tiles/bc-albers-lite/{z}/{x}/{y}.png', {
-    Attribution: '&copy; <a href="http://openstreetmap.org/copyright">OpenStreetMap</a> contributors',
 
-});
-tileLayer.addTo(map);
+// Layer Styles
+const baseStyles = {
+    rivers: {
+        weight: 1,
+        color: '#0077bb',
+        opacity: 0.8
+    },
+    lakes: {
+        weight: 1,
+        color: '#0077FF',
+        fillColor: '#0077FF',
+        fillOpacity: 0.3,
+        fill: true
+    }
+};
+
+const interactionStyles = {
+    hover: {
+        lakes: {
+            weight: 6,
+            fillOpacity: 0.7,
+            fill: true
+        },
+        rivers: {
+            weight: 6,
+            opacity: 1
+        }
+    },
+    highlight: {
+        lakes: {
+            weight: 4,
+            color: 'red',
+            fillColor: 'red',
+            fillOpacity: 0.7,
+            fill: true
+        },
+        rivers: {
+            weight: 4,
+            color: 'red',
+            opacity: 1
+        }
+    }
+};
+
+const state = {
+    hoverHighlight: null,
+    highlight: null,
+    highlightProperties: null,
+    highlightCleanupTimeout: null,
+    currentPopup: null,
+    isPopupOpen: false
+};
+
+const tileLayer = L.tileLayer('https://services.pacificclimate.org/tiles/bc-albers-lite/{z}/{x}/{y}.png', {
+    Attribution: '&copy; <a href="http://openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
 
 const vectorTileLayer = L.vectorGrid.protobuf(
     'https://beehive.pacificclimate.org/bbox-server/xyz/water_tiles/{z}/{x}/{y}.mvt',
     {
-        vectorTileLayerStyles: {
-            rivers: {
-                weight: 1,
-                color: '#0077bb',
-                opacity: 0.8
-            },
-            lakes: {
-                weight: 1,
-                color: '#0077FF',
-                fillColor: '#0077FF',
-                fillOpacity: 0.3,
-                fill: true
-            }
-        },
+        vectorTileLayerStyles: baseStyles,
         maxNativeZoom: 20,
         interactive: true,
-        getFeatureId: (feature) => {
-            const layerName = feature.properties.hasOwnProperty('hylak_id') ? 'lakes' : 'rivers';
-
-            return feature.properties.unique_fid;
-        }
+        getFeatureId: (feature) => feature.properties.uid,
     }
-);
+).addTo(map);
 
-let hoverHighlight = null;
-let highlight = null;
-let highlightCleanupTimeout;
+// Helpers
+const getFeatureInfo = (event) => {
+    const { properties } = event.layer;
+    return {
+        properties,
+        uid: properties.uid,
+        layerType: properties.islake ? 'lakes' : 'rivers'
+    };
+};
 
+const clearHoverHighlight = () => {
+    if (state.hoverHighlight) {
+        vectorTileLayer.resetFeatureStyle(state.hoverHighlight);
+        state.hoverHighlight = null;
+    }
+};
+
+const clearHighlight = () => {
+    if (state.highlight) {
+        vectorTileLayer.resetFeatureStyle(state.highlight);
+        state.highlight = null;
+        state.highlightProperties = null;
+    }
+};
+
+const resetCursor = () => {
+    map.getContainer().style.cursor = '';
+};
+
+// Event handlers
 vectorTileLayer.on('mouseover', (event) => {
-    const layerId = event.layer.properties.unique_fid;
+    if (state.isPopupOpen) return;
 
-    if (highlight === layerId) {
+    const { uid, layerType } = getFeatureInfo(event);
+
+    if (state.highlight === uid) {
         map.getContainer().style.cursor = 'pointer';
         return;
     }
 
-    if (hoverHighlight === layerId) return;
+    if (state.hoverHighlight === uid) return;
 
-    hoverHighlight = layerId;
-
-    const layerName = event.layer.properties.hasOwnProperty('hylak_id') ? 'lakes' : 'rivers';
-    console.log('Hovering over:', layerName, layerId);
-
-    vectorTileLayer.setFeatureStyle(layerId, getHoverStyle(layerName));
+    state.hoverHighlight = uid;
+    vectorTileLayer.setFeatureStyle(uid, interactionStyles.hover[layerType]);
     map.getContainer().style.cursor = 'pointer';
 });
 
 vectorTileLayer.on('mouseout', (event) => {
-    const layerId = event.layer.properties.unique_fid;
+    if (state.isPopupOpen) return;
 
-    if (hoverHighlight === layerId && highlight !== layerId) {
+    const { uid } = getFeatureInfo(event);
+
+    if (state.hoverHighlight === uid && state.highlight !== uid) {
         clearHoverHighlight();
+        resetCursor();
     }
-    map.getContainer().style.cursor = '';
 });
 
 vectorTileLayer.on('click', (event) => {
-    const properties = event.layer.properties;
-    const layerId = properties.unique_fid;
-    const clickedLatLng = event.latlng;
-
-    console.log('Clicked feature:', properties, 'LatLng:', clickedLatLng);
-
-    map.setView(clickedLatLng, map.getZoom());
-
-    L.popup()
-        .setLatLng(clickedLatLng)
-        .setContent(`<strong>SubId:</strong> ${properties.subid}`)
-        .openOn(map);
+    const { uid, properties, layerType } = getFeatureInfo(event);
+    map.setView(event.latlng, map.getZoom());
 
     clearHoverHighlight();
     clearHighlight();
 
-    highlight = layerId;
-    const layerName = properties.hasOwnProperty('hylak_id') ? 'lakes' : 'rivers';
-    console.log('Highlighting:', layerName, layerId);
+    if (state.currentPopup) {
+        map.closePopup(state.currentPopup);
+    }
 
-    vectorTileLayer.setFeatureStyle(highlight, getHighlightStyle(layerName));
+    state.highlight = uid;
+    state.highlightProperties = properties;
+    vectorTileLayer.setFeatureStyle(uid, interactionStyles.highlight[layerType]);
+
+    state.currentPopup = L.popup()
+        .setLatLng(event.latlng)
+        .setContent(`<strong>SubId:</strong> ${properties.subid}`)
+        .openOn(map);
+
+    // Popup-specific event handlers
+    state.currentPopup.on('add', () => {
+        state.isPopupOpen = true;
+        resetCursor();
+    });
+
+    state.currentPopup.on('remove', () => {
+        state.isPopupOpen = false;
+        resetCursor();
+    });
 });
 
 map.on('zoomstart movestart', () => {
     clearHoverHighlight();
-    if (highlightCleanupTimeout) {
-        clearTimeout(highlightCleanupTimeout);
+    resetCursor();
+    if (state.highlightCleanupTimeout) {
+        clearTimeout(state.highlightCleanupTimeout);
     }
 });
 
 map.on('zoomend moveend', () => {
-    if (highlight) {
-        highlightCleanupTimeout = setTimeout(() => {
-            const layerName = highlight.split('_')[0];
-            console.log('Reapplying highlight after zoom:', layerName, highlight);
-            vectorTileLayer.setFeatureStyle(highlight, getHighlightStyle(layerName));
+    if (state.highlight && state.highlightProperties) {
+        state.highlightCleanupTimeout = setTimeout(() => {
+            const layerType = state.highlightProperties.islake ? 'lakes' : 'rivers';
+            vectorTileLayer.setFeatureStyle(state.highlight, interactionStyles.highlight[layerType]);
         }, 100);
     }
 });
 
-const clearHoverHighlight = function () {
-    if (hoverHighlight) {
-        vectorTileLayer.resetFeatureStyle(hoverHighlight);
-        hoverHighlight = null;
-    }
-};
-
-const clearHighlight = function () {
-    if (highlight) {
-        vectorTileLayer.resetFeatureStyle(highlight);
-        highlight = null;
-    }
-};
-
-const getHoverStyle = function (layerName) {
-    if (layerName === 'lakes') {
-        return {
-            weight: 5,
-            fillOpacity: 0.5,
-            fill: true,
-        };
-    }
-    return {
-        weight: 5,
-        opacity: 1,
-    };
-};
-
-const getHighlightStyle = function (layerName) {
-    if (layerName === 'lakes') {
-        return {
-            weight: 2,
-            color: 'red',
-            fillColor: 'red',
-            fillOpacity: 0.7,
-            fill: true,
-        };
-    }
-    return {
-        weight: 2,
-        color: 'red',
-        opacity: 1,
-    };
-};
-
-vectorTileLayer.addTo(map);
-
+map.on('popupclose', () => {
+    state.isPopupOpen = false;
+    resetCursor();
+});

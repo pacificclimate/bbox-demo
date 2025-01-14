@@ -14,6 +14,11 @@ json = "assets/BCAlbersCustomGrid.json"
 [[tileset]]
 name = "water_tiles"
 
+[[tileset.cache_control]]
+max_age = 86400 # Cache for 1 day
+minzoom = 0
+maxzoom = 12
+
 [[tileset.tms]]
 id = "BCAlbersCustomGrid"
 
@@ -28,7 +33,7 @@ geometry_type = "LINESTRING"
 
 [[tileset.postgis.layer.query]]
 sql = """
-  SELECT  unique_fid, SubId, DowSubId, ST_SetSRID(geom, 3005) AS geom
+  SELECT  Uid, SubId, IsLake, DowSubId, ST_SetSRID(geom, 3005) AS geom
   FROM rivers
   WHERE geom && ST_MakeEnvelope($1, $2, $3, $4, 3005)
 """
@@ -40,8 +45,9 @@ geometry_type = "POLYGON"
 
 [[tileset.postgis.layer.query]]
 sql = """
-  SELECT unique_fid, SubId, Hylak_id, ST_SetSRID(geom, 3005) AS geom
+  SELECT Uid, SubId, IsLake, ST_SetSRID(geom, 3005) AS geom
   FROM lakes
   WHERE geom && ST_MakeEnvelope($1, $2, $3, $4, 3005)
 """
+
 

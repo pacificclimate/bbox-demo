@@ -15,7 +15,8 @@ ogr2ogr \
   -nln rivers \
   -lco GEOMETRY_NAME=geom \
   -lco FID=fid \
-  -a_srs EPSG:3005
+  -a_srs EPSG:3005 \
+  -addfields
 
 echo "Rivers data imported. Importing lakes data..."
 ogr2ogr \
@@ -26,22 +27,32 @@ ogr2ogr \
   -nln lakes \
   -lco GEOMETRY_NAME=geom \
   -lco FID=fid \
-  -a_srs EPSG:3005
+  -a_srs EPSG:3005 \
+  -addfields
 
 echo "Updating tables and adding indices..."
 psql "$DB_DSN" <<-EOSQL
-  -- Add unique_fid column to both tables
-  ALTER TABLE rivers ADD COLUMN unique_fid TEXT;
-  ALTER TABLE lakes ADD COLUMN unique_fid TEXT;
+  DO \$\$
+  BEGIN
+    -- Create a shared sequence for unique IDs
+    IF NOT EXISTS (SELECT 1 FROM pg_sequences WHERE schemaname = 'public' AND sequencename = 'shared_uid_seq') THEN
+      CREATE SEQUENCE shared_uid_seq START 1;
+    END IF;
 
-  -- Populate unique_fid for rivers
-  UPDATE rivers SET unique_fid = CONCAT('rivers_', fid);
+    -- Update rivers table
+    ALTER TABLE rivers ADD COLUMN Uid INT;
+    ALTER TABLE rivers ADD COLUMN IsLake BOOLEAN DEFAULT FALSE;
+    UPDATE rivers SET uid = nextval('shared_uid_seq');
+
+    -- Update lakes table
+    ALTER TABLE lakes ADD COLUMN Uid INT;
+    ALTER TABLE lakes ADD COLUMN IsLake BOOLEAN DEFAULT TRUE;
+    UPDATE lakes SET uid = nextval('shared_uid_seq');
+  END \$\$;
+
   CREATE INDEX rivers_geom_idx ON rivers USING GIST(geom);
-  VACUUM ANALYZE rivers;
-
-  -- Populate unique_fid for lakes
-  UPDATE lakes SET unique_fid = CONCAT('lakes_', fid);
   CREATE INDEX lakes_geom_idx ON lakes USING GIST(geom);
+  VACUUM ANALYZE rivers;
   VACUUM ANALYZE lakes;
 EOSQL
 echo "Data import complete."
