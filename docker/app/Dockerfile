@@ -1,16 +1,23 @@
-FROM python:3.12-slim
-
-RUN pip install poetry
+# Stage 1: Build the Vite app
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-COPY  ../../pyproject.toml  ../../poetry.lock /app/
+COPY ./app/package.json ./app/package-lock.json ./
+RUN npm install --production
 
-RUN poetry lock
-RUN poetry install --no-root
+COPY ./app /app
+RUN npm run build
 
-COPY ../../app /app
+# Stage 2: Serve
+FROM node:18-alpine
 
-EXPOSE 8080
+WORKDIR /app
 
-CMD ["poetry", "run", "python", "app.py"]
+RUN npm install -g http-server
+
+COPY --from=builder /app/dist /app/dist
+
+EXPOSE 3000
+
+CMD ["http-server", "dist", "-p", "3000"]
