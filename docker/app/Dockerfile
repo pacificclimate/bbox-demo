@@ -4,7 +4,7 @@ FROM node:18-alpine AS builder
 WORKDIR /app
 
 COPY ./app/package.json ./app/package-lock.json ./
-RUN npm install --production
+RUN npm install
 
 COPY ./app /app
 RUN npm run build
