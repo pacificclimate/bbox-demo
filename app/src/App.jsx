@@ -10,4 +10,3 @@ const App = () => {
 console.log("Rendering MapComponent...");
 
 export default App;
-

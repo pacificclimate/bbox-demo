@@ -3,72 +3,100 @@ import L from "leaflet";
 import proj4 from "proj4";
 import { useMap } from "react-leaflet";
 
-// TODO: 
-// - Add guard rails to ensure coordinates are within bounds of BC. 
-// - Add a button to clear all markers.
-// - Remove previous marker when a new one is added.
 const PointPlotter = () => {
-    const [coords, setCoords] = useState({ x: "", y: "" });
-    const [projType, setProjType] = useState("albers");
-    const markersRef = useRef([]);
-    const map = useMap();
+  const [coords, setCoords] = useState({ x: "", y: "" });
+  const [projType, setProjType] = useState("albers");
+  const markersRef = useRef([]);
+  const map = useMap();
 
-    const albersProj =
-        "+proj=aea +lat_1=50 +lat_2=58.5 +lat_0=45 +lon_0=-126 +x_0=1000000 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs";
-    const mercatorProj = "EPSG:3857";
-    const wgs84 = "EPSG:4326";
+  const albersProj =
+    "+proj=aea +lat_1=50 +lat_2=58.5 +lat_0=45 +lon_0=-126 +x_0=1000000 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs";
+  const mercatorProj = "EPSG:3857";
+  const wgs84 = "EPSG:4326";
 
-    const convertToLatLng = (x, y) => {
-        const fromProj = projType === "albers" ? albersProj : mercatorProj;
-        const [lon, lat] = proj4(fromProj, wgs84, [parseFloat(x), parseFloat(y)]);
-        return [lat, lon];
-    };
+  // Define BC bounds (approximate latitude/longitude range)
+  const BC_BOUNDS = {
+    latMin: 48,
+    latMax: 60,
+    lonMin: -140,
+    lonMax: -114,
+  };
 
-    const markerGroup = useRef(L.layerGroup().addTo(map));
+  const convertToLatLng = (x, y) => {
+    const fromProj = projType === "albers" ? albersProj : mercatorProj;
+    const [lon, lat] = proj4(fromProj, wgs84, [parseFloat(x), parseFloat(y)]);
+    return [lat, lon];
+  };
 
-    const plotPoint = (e) => {
-        e.preventDefault();
-        try {
-            const [lat, lng] = convertToLatLng(coords.x, coords.y);
-            const marker = L.marker([lat, lng]);
-            markerGroup.current.addLayer(marker);
-            map.setView([lat, lng], map.getZoom());
-            setCoords({ x: "", y: "" });
-        } catch (error) {
-            console.error("Invalid coordinates:", error);
-        }
-    };
-
+  const isWithinBounds = ([lat, lon]) => {
     return (
-        <div className="point-plotter">
-            <form onSubmit={plotPoint}>
-                <input
-                    type="number"
-                    placeholder="X Coordinate"
-                    value={coords.x}
-                    onChange={(e) =>
-                        setCoords((prev) => ({ ...prev, x: e.target.value }))
-                    }
-                />
-                <input
-                    type="number"
-                    placeholder="Y Coordinate"
-                    value={coords.y}
-                    onChange={(e) =>
-                        setCoords((prev) => ({ ...prev, y: e.target.value }))
-                    }
-                />
-                <select
-                    value={projType}
-                    onChange={(e) => setProjType(e.target.value)}
-                >
-                    <option value="albers">BC Albers</option>
-                    <option value="mercator">Web Mercator</option>
-                </select>
-                <button type="submit">Plot Point</button>
-            </form>
-        </div>
+      lat >= BC_BOUNDS.latMin &&
+      lat <= BC_BOUNDS.latMax &&
+      lon >= BC_BOUNDS.lonMin &&
+      lon <= BC_BOUNDS.lonMax
     );
+  };
+
+  const markerGroup = useRef(L.layerGroup().addTo(map));
+
+  const clearMarkers = () => {
+    markerGroup.current.clearLayers();
+  };
+
+  const plotPoint = (e) => {
+    e.preventDefault();
+    try {
+      const [lat, lng] = convertToLatLng(coords.x, coords.y);
+
+      if (!isWithinBounds([lat, lng])) {
+        alert("Coordinates are outside the bounds of BC.");
+        return;
+      }
+      // clearMarkers(); May want to include this to remove previous markers
+
+      const marker = L.marker([lat, lng]);
+      markerGroup.current.addLayer(marker);
+      map.setView([lat, lng], map.getZoom());
+      setCoords({ x: "", y: "" });
+    } catch (error) {
+      console.error("Invalid coordinates:", error);
+    }
+  };
+
+  return (
+    <div className="point-plotter">
+      <form onSubmit={plotPoint}>
+        <input
+          type="number"
+          placeholder="X Coordinate"
+          value={coords.x}
+          onChange={(e) =>
+            setCoords((prev) => ({ ...prev, x: e.target.value }))
+          }
+        />
+        <input
+          type="number"
+          placeholder="Y Coordinate"
+          value={coords.y}
+          onChange={(e) =>
+            setCoords((prev) => ({ ...prev, y: e.target.value }))
+          }
+        />
+        <select value={projType} onChange={(e) => setProjType(e.target.value)}>
+          <option value="albers">BC Albers</option>
+          <option value="mercator">Web Mercator</option>
+        </select>
+        <button type="submit">Plot Point</button>
+        <button
+          type="button"
+          onClick={clearMarkers}
+          style={{ marginLeft: "10px" }}
+        >
+          Clear All Markers
+        </button>
+      </form>
+    </div>
+  );
 };
 
 export default memo(PointPlotter);

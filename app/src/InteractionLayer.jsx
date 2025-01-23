@@ -5,157 +5,167 @@ import L from "leaflet";
 import "leaflet.vectorgrid";
 
 const InteractionLayer = ({ baseStyles, interactionStyles }) => {
-    const stateRef = useRef({
-        hoverHighlight: null,
-        currentPopup: null,
-        isPopupOpen: false,
-        clickedFeature: null,
-        isDragging: false,
-    });
-    const vectorTileLayerRef = useRef(null);
-    const mapRef = useRef(null);
+  const stateRef = useRef({
+    hoverHighlight: null,
+    currentPopup: null,
+    isPopupOpen: false,
+    clickedFeature: null,
+    isDragging: false,
+  });
+  const vectorTileLayerRef = useRef(null);
+  const mapRef = useRef(null);
 
-    const resetCursor = useCallback(() => {
-        if (mapRef.current) mapRef.current.getContainer().style.cursor = "";
-    }, []);
+  const resetCursor = useCallback(() => {
+    if (mapRef.current) mapRef.current.getContainer().style.cursor = "";
+  }, []);
 
-    const clearHoverHighlight = useCallback(() => {
-        if (stateRef.current.hoverHighlight && vectorTileLayerRef.current) {
-            if (stateRef.current.hoverHighlight !== stateRef.current.clickedFeature) {
-                vectorTileLayerRef.current.resetFeatureStyle(stateRef.current.hoverHighlight);
-            }
-            stateRef.current.hoverHighlight = null;
-        }
-    }, []);
-
-    const getFeatureInfo = useCallback((event) => {
-        const { properties } = event.layer;
-        return {
-            properties,
-            uid: properties.uid,
-            layerType: properties.islake ? "lakes" : "rivers",
-        };
-    }, []);
-
-    const map = useMapEvents({
-        zoomstart: () => {
-            clearHoverHighlight();
-            resetCursor();
-        },
-        movestart: () => {
-            clearHoverHighlight();
-            resetCursor();
-        },
-    });
-
-    useEffect(() => {
-        mapRef.current = map;
-    }, [map]);
-
-    useEffect(() => {
-        if (!mapRef.current) return;
-
-        const vectorTileLayer = L.vectorGrid.protobuf(
-            "https://beehive.pacificclimate.org/bbox-server/xyz/water_tiles/{z}/{x}/{y}.mvt",
-            {
-                vectorTileLayerStyles: baseStyles,
-                maxNativeZoom: 13,
-                interactive: true,
-                getFeatureId: (feature) => feature.properties.uid,
-            }
+  const clearHoverHighlight = useCallback(() => {
+    if (stateRef.current.hoverHighlight && vectorTileLayerRef.current) {
+      if (stateRef.current.hoverHighlight !== stateRef.current.clickedFeature) {
+        vectorTileLayerRef.current.resetFeatureStyle(
+          stateRef.current.hoverHighlight
         );
+      }
+      stateRef.current.hoverHighlight = null;
+    }
+  }, []);
 
-        vectorTileLayerRef.current = vectorTileLayer;
+  const getFeatureInfo = useCallback((event) => {
+    const { properties } = event.layer;
+    return {
+      properties,
+      uid: properties.uid,
+      layerType: properties.islake ? "lakes" : "rivers",
+    };
+  }, []);
 
-        const handleMouseOver = (event) => {
-            if (stateRef.current.isDragging) return;
-            const { uid, layerType } = getFeatureInfo(event);
+  const map = useMapEvents({
+    zoomstart: () => {
+      clearHoverHighlight();
+      resetCursor();
+    },
+    movestart: () => {
+      clearHoverHighlight();
+      resetCursor();
+    },
+  });
 
-            if (stateRef.current.hoverHighlight === uid) {
-                mapRef.current.getContainer().style.cursor = "pointer";
-                return;
-            }
+  useEffect(() => {
+    mapRef.current = map;
+  }, [map]);
 
-            clearHoverHighlight();
-            stateRef.current.hoverHighlight = uid;
+  useEffect(() => {
+    if (!mapRef.current) return;
 
-            if (uid !== stateRef.current.clickedFeature) {
-                vectorTileLayer.setFeatureStyle(uid, interactionStyles.hover[layerType]);
-            }
-            mapRef.current.getContainer().style.cursor = "pointer";
-        };
+    const vectorTileLayer = L.vectorGrid.protobuf(
+      "https://beehive.pacificclimate.org/bbox-server/xyz/water_tiles/{z}/{x}/{y}.mvt",
+      {
+        vectorTileLayerStyles: baseStyles,
+        maxNativeZoom: 13,
+        interactive: true,
+        getFeatureId: (feature) => feature.properties.uid,
+      }
+    );
 
-        const handleMouseOut = () => {
-            if (stateRef.current.isDragging) return;
-            clearHoverHighlight();
-            resetCursor();
-        };
+    vectorTileLayerRef.current = vectorTileLayer;
 
-        const handleClick = (event) => {
-            if (stateRef.current.isDragging) return;
-            const { uid, properties, layerType } = getFeatureInfo(event);
+    const handleMouseOver = (event) => {
+      if (stateRef.current.isDragging) return;
+      const { uid, layerType } = getFeatureInfo(event);
 
-            // Reset previous clicked feature if exists
-            if (stateRef.current.clickedFeature && vectorTileLayerRef.current) {
-                vectorTileLayerRef.current.resetFeatureStyle(stateRef.current.clickedFeature);
-            }
+      if (stateRef.current.hoverHighlight === uid) {
+        mapRef.current.getContainer().style.cursor = "pointer";
+        return;
+      }
 
-            // Set new clicked feature
-            stateRef.current.clickedFeature = uid;
-            vectorTileLayer.setFeatureStyle(uid, interactionStyles.highlight[layerType]);
+      clearHoverHighlight();
+      stateRef.current.hoverHighlight = uid;
 
-            if (stateRef.current.currentPopup) {
-                mapRef.current.closePopup(stateRef.current.currentPopup);
-            }
+      if (uid !== stateRef.current.clickedFeature) {
+        vectorTileLayer.setFeatureStyle(
+          uid,
+          interactionStyles.hover[layerType]
+        );
+      }
+      mapRef.current.getContainer().style.cursor = "pointer";
+    };
 
-            const popup = L.popup()
-                .setLatLng(event.latlng)
-                .setContent(`<strong>SubId:</strong> ${properties.subid}`)
-                .openOn(mapRef.current);
+    const handleMouseOut = () => {
+      if (stateRef.current.isDragging) return;
+      clearHoverHighlight();
+      resetCursor();
+    };
 
-            popup.on("add", () => {
-                stateRef.current.isPopupOpen = true;
-                resetCursor();
-            });
+    const handleClick = (event) => {
+      if (stateRef.current.isDragging) return;
+      const { uid, properties, layerType } = getFeatureInfo(event);
 
-            popup.on("remove", () => {
-                stateRef.current.isPopupOpen = false;
-                resetCursor();
-            });
+      // Reset previous clicked feature if exists
+      if (stateRef.current.clickedFeature && vectorTileLayerRef.current) {
+        vectorTileLayerRef.current.resetFeatureStyle(
+          stateRef.current.clickedFeature
+        );
+      }
 
-            stateRef.current.currentPopup = popup;
-        };
+      // Set new clicked feature
+      stateRef.current.clickedFeature = uid;
+      vectorTileLayer.setFeatureStyle(
+        uid,
+        interactionStyles.highlight[layerType]
+      );
 
-        // Handle drag start and end
-        const handleMouseDown = () => {
-            stateRef.current.isDragging = true;
-        };
+      if (stateRef.current.currentPopup) {
+        mapRef.current.closePopup(stateRef.current.currentPopup);
+      }
 
-        const handleMouseUp = () => {
-            stateRef.current.isDragging = false;
-        };
+      const popup = L.popup()
+        .setLatLng(event.latlng)
+        .setContent(`<strong>SubId:</strong> ${properties.subid}`)
+        .openOn(mapRef.current);
 
-        vectorTileLayer.on("mouseover", handleMouseOver);
-        vectorTileLayer.on("mouseout", handleMouseOut);
-        vectorTileLayer.on("click", handleClick);
-        vectorTileLayer.on("mousedown", handleMouseDown);
-        vectorTileLayer.on("mouseup", handleMouseUp);
+      popup.on("add", () => {
+        stateRef.current.isPopupOpen = true;
+        resetCursor();
+      });
 
-        vectorTileLayer.addTo(mapRef.current);
+      popup.on("remove", () => {
+        stateRef.current.isPopupOpen = false;
+        resetCursor();
+      });
 
-        return () => {
-            if (mapRef.current) {
-                mapRef.current.removeLayer(vectorTileLayer);
-            }
-        };
-    }, [baseStyles, interactionStyles, getFeatureInfo, clearHoverHighlight]);
+      stateRef.current.currentPopup = popup;
+    };
 
-    return null;
+    // Handle drag start and end
+    const handleMouseDown = () => {
+      stateRef.current.isDragging = true;
+    };
+
+    const handleMouseUp = () => {
+      stateRef.current.isDragging = false;
+    };
+
+    vectorTileLayer.on("mouseover", handleMouseOver);
+    vectorTileLayer.on("mouseout", handleMouseOut);
+    vectorTileLayer.on("click", handleClick);
+    vectorTileLayer.on("mousedown", handleMouseDown);
+    vectorTileLayer.on("mouseup", handleMouseUp);
+
+    vectorTileLayer.addTo(mapRef.current);
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.removeLayer(vectorTileLayer);
+      }
+    };
+  }, [baseStyles, interactionStyles, getFeatureInfo, clearHoverHighlight]);
+
+  return null;
 };
 
 InteractionLayer.propTypes = {
-    baseStyles: PropTypes.object.isRequired,
-    interactionStyles: PropTypes.object.isRequired,
+  baseStyles: PropTypes.object.isRequired,
+  interactionStyles: PropTypes.object.isRequired,
 };
 
 export default memo(InteractionLayer);
