@@ -11,7 +11,8 @@ export default defineConfig({
       REACT_APP_BC_BASE_MAP_TILES_URL: 'https://swarm.pacificclimate.org/tiles/bc-albers-lite/{z}/{x}/{y}.png',
     }),
   ],
-  // Local dev only
+  base: '/bbox-demo-app/',
+  // Local Dev only
   server: {
     warmup: {
       clientFiles: ['src/styles.js', 'src/MapComponent.jsx', 'src/InteractionLayer.jsx', 'src/PointPlotter.jsx'],
