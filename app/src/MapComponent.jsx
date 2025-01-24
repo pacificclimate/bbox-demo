@@ -13,9 +13,9 @@ const MapComponent = () => {
       center={[55, -126]}
       zoom={6}
       ref={mapRef}
-      zoomSnap={0.01}
-      zoomDelta={0.01}
-      wheelPxPerZoomLevel={120}
+      zoomSnap={0.1}
+      zoomDelta={0.1}
+      wheelPxPerZoomLevel={60}
       worldCopyJump={true}
       keepBuffer={16}
     >
