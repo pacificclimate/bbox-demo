@@ -8,6 +8,42 @@ name = "postgis_db"
 [datasource.postgis]
 url = "${DB_DSN}"
 
+[[collection]]
+name = "lakes"
+title = "Lakes"
+description = "Lake features"
+[collection.postgis]
+datasource = "postgis_db"
+sql = """
+SELECT 
+    Uid, 
+    SubId, 
+    ST_AsGeoJSON(ST_SetSRID(geom, 3005)) AS geojson 
+FROM lakes 
+"""
+fid_field = "subid"
+geometry_field = "geojson"
+queryable_fields = ["Uid","SubId"]
+
+[[collection]]
+name = "rivers"
+title = "Rivers"
+description = "Rivers Features"
+[collection.postgis]
+datasource = "postgis_db"
+sql = """
+SELECT 
+    Uid, 
+    SubId, 
+    IsLake, 
+    DowSubId, 
+    ST_AsGeoJSON(ST_SetSRID(geom, 3005)) AS geojson 
+FROM rivers 
+"""
+fid_field = "subid"
+geometry_field = "geojson"
+queryable_fields = ["Uid","SubId"]
+
 [[grid]]
 json = "assets/BCAlbersCustomGrid.json"
 

@@ -96,8 +96,9 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
       resetCursor();
     };
 
-    const handleClick = (event) => {
+    const handleClick = async (event) => {
       if (stateRef.current.isDragging) return;
+
       const { uid, properties, layerType } = getFeatureInfo(event);
 
       // Reset previous clicked feature if exists
@@ -118,25 +119,66 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
         mapRef.current.closePopup(stateRef.current.currentPopup);
       }
 
-      const popup = L.popup()
-        .setLatLng(event.latlng)
-        .setContent(`<strong>SubId:</strong> ${properties.subid}`)
-        .openOn(mapRef.current);
+      try {
+        const collection = layerType === "lakes" ? "lakes" : "rivers";
 
-      popup.on("add", () => {
-        stateRef.current.isPopupOpen = true;
-        resetCursor();
-      });
+        const response = await fetch(
+          `https://beehive.pacificclimate.org/bbox-server/collections/${collection}/items/${properties.subid}.json`
+        );
 
-      popup.on("remove", () => {
-        stateRef.current.isPopupOpen = false;
-        resetCursor();
-      });
+        if (!response.ok) {
+          throw new Error(`Failed to fetch GeoJSON: ${response.statusText}`);
+        }
 
-      stateRef.current.currentPopup = popup;
+        const geoJson = await response.json();
+
+        const blob = new Blob([JSON.stringify(geoJson, null, 2)], {
+          type: "application/json",
+        });
+        const url = URL.createObjectURL(blob);
+
+        const popupContent = `
+            <div style="max-width: 250px; word-wrap: break-word;">
+              <strong>SubId:</strong> ${properties.subid} <br />
+              <a href="${url}" download="${properties.subid}.geojson" style="color: blue; text-decoration: underline;">Download GeoJSON</a>
+            </div>
+          `;
+
+        const popup = L.popup()
+          .setLatLng(event.latlng)
+          .setContent(popupContent)
+          .openOn(mapRef.current);
+
+        popup.on("add", () => {
+          stateRef.current.isPopupOpen = true;
+          resetCursor();
+        });
+
+        popup.on("remove", () => {
+          stateRef.current.isPopupOpen = false;
+          resetCursor();
+          URL.revokeObjectURL(url);
+        });
+
+        stateRef.current.currentPopup = popup;
+      } catch (error) {
+        console.error("Error fetching GeoJSON:", error);
+
+        const popupContent = `
+            <div style="max-width: 250px; word-wrap: break-word; color: red;">
+              <strong>Error:</strong> Failed to fetch GeoJSON for SubId ${properties.subid}.
+            </div>
+          `;
+
+        const popup = L.popup()
+          .setLatLng(event.latlng)
+          .setContent(popupContent)
+          .openOn(mapRef.current);
+
+        stateRef.current.currentPopup = popup;
+      }
     };
 
-    // Handle drag start and end
     const handleMouseDown = () => {
       stateRef.current.isDragging = true;
     };

@@ -12,9 +12,8 @@ const PointPlotter = () => {
   const albersProj =
     "+proj=aea +lat_1=50 +lat_2=58.5 +lat_0=45 +lon_0=-126 +x_0=1000000 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs";
   const mercatorProj = "EPSG:3857";
-  const wgs84 = "EPSG:4326";
+  const wgs84Proj = "EPSG:4326";
 
-  // Define BC bounds (approximate latitude/longitude range)
   const BC_BOUNDS = {
     latMin: 48,
     latMax: 60,
@@ -23,8 +22,14 @@ const PointPlotter = () => {
   };
 
   const convertToLatLng = (x, y) => {
+    if (projType === "wgs84") {
+      return [parseFloat(y), parseFloat(x)]; // WGS84 uses [latitude, longitude]
+    }
     const fromProj = projType === "albers" ? albersProj : mercatorProj;
-    const [lon, lat] = proj4(fromProj, wgs84, [parseFloat(x), parseFloat(y)]);
+    const [lon, lat] = proj4(fromProj, wgs84Proj, [
+      parseFloat(x),
+      parseFloat(y),
+    ]);
     return [lat, lon];
   };
 
@@ -68,7 +73,7 @@ const PointPlotter = () => {
       <form onSubmit={plotPoint}>
         <input
           type="number"
-          placeholder="X Coordinate"
+          placeholder={projType === "wgs84" ? "Longitude" : "X Coordinate"}
           value={coords.x}
           onChange={(e) =>
             setCoords((prev) => ({ ...prev, x: e.target.value }))
@@ -76,7 +81,7 @@ const PointPlotter = () => {
         />
         <input
           type="number"
-          placeholder="Y Coordinate"
+          placeholder={projType === "wgs84" ? "Latitude" : "Y Coordinate"}
           value={coords.y}
           onChange={(e) =>
             setCoords((prev) => ({ ...prev, y: e.target.value }))
@@ -85,6 +90,7 @@ const PointPlotter = () => {
         <select value={projType} onChange={(e) => setProjType(e.target.value)}>
           <option value="albers">BC Albers</option>
           <option value="mercator">Web Mercator</option>
+          <option value="wgs84">WGS84 (Latitude/Longitude)</option>
         </select>
         <button type="submit">Plot Point</button>
         <button
