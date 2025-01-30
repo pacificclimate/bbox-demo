@@ -14,11 +14,24 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
   });
   const vectorTileLayerRef = useRef(null);
   const mapRef = useRef(null);
+  const popup = useRef(L.popup({ className: "custom-popup", autoPan: false }));
 
-  const resetCursor = useCallback(() => {
-    if (mapRef.current) mapRef.current.getContainer().style.cursor = "";
-  }, []);
+  // Function to update the map container's cursor
+  const updateCursor = (() => {
+    let lastCursor = null;
+    return (cursor) => {
+      if (cursor === lastCursor) return;
+      lastCursor = cursor;
+      const mapContainer = mapRef.current?.getContainer();
+      if (mapContainer) {
+        requestAnimationFrame(() => {
+          mapContainer.style.cursor = cursor;
+        });
+      }
+    };
+  })();
 
+  // Clear hover highlight
   const clearHoverHighlight = useCallback(() => {
     if (stateRef.current.hoverHighlight && vectorTileLayerRef.current) {
       if (stateRef.current.hoverHighlight !== stateRef.current.clickedFeature) {
@@ -42,11 +55,17 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
   const map = useMapEvents({
     zoomstart: () => {
       clearHoverHighlight();
-      resetCursor();
+      updateCursor("grab");
     },
     movestart: () => {
       clearHoverHighlight();
-      resetCursor();
+      updateCursor("grab");
+    },
+    dragstart: () => {
+      updateCursor("grabbing");
+    },
+    dragend: () => {
+      updateCursor("grab");
     },
   });
 
@@ -61,39 +80,51 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
       "https://beehive.pacificclimate.org/bbox-server/xyz/water_tiles/{z}/{x}/{y}.mvt",
       {
         vectorTileLayerStyles: baseStyles,
-        maxNativeZoom: 13,
+        maxNativeZoom: 14,
         interactive: true,
         getFeatureId: (feature) => feature.properties.uid,
+        updateWhenIdle: true,
+        updateWhenZooming: true,
+        keepBuffer: 1,
+        preferCanvas: true,
+        zIndex: 1  
       }
     );
 
     vectorTileLayerRef.current = vectorTileLayer;
 
-    const handleMouseOver = (event) => {
-      if (stateRef.current.isDragging) return;
-      const { uid, layerType } = getFeatureInfo(event);
+    const handleMouseOver = (() => {
+      let animationFrame = null;
+      return (event) => {
+        if (stateRef.current.isDragging) return;
+        if (animationFrame) cancelAnimationFrame(animationFrame);
 
-      if (stateRef.current.hoverHighlight === uid) {
-        mapRef.current.getContainer().style.cursor = "pointer";
-        return;
-      }
+        animationFrame = requestAnimationFrame(() => {
+          const { uid, layerType } = getFeatureInfo(event);
 
-      clearHoverHighlight();
-      stateRef.current.hoverHighlight = uid;
+          if (stateRef.current.hoverHighlight === uid) {
+            updateCursor("pointer");
+            return;
+          }
 
-      if (uid !== stateRef.current.clickedFeature) {
-        vectorTileLayer.setFeatureStyle(
-          uid,
-          interactionStyles.hover[layerType]
-        );
-      }
-      mapRef.current.getContainer().style.cursor = "pointer";
-    };
+          clearHoverHighlight();
+          stateRef.current.hoverHighlight = uid;
+
+          if (uid !== stateRef.current.clickedFeature) {
+            vectorTileLayer.setFeatureStyle(
+              uid,
+              interactionStyles.hover[layerType]
+            );
+          }
+          updateCursor("pointer");
+        });
+      };
+    })();
 
     const handleMouseOut = () => {
       if (stateRef.current.isDragging) return;
       clearHoverHighlight();
-      resetCursor();
+      updateCursor("grab");
     };
 
     const handleClick = async (event) => {
@@ -137,54 +168,38 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
         });
         const url = URL.createObjectURL(blob);
 
-        const popupContent = `
+        popup.current
+          .setLatLng(event.latlng)
+          .setContent(
+            `
             <div style="max-width: 250px; word-wrap: break-word;">
               <strong>SubId:</strong> ${properties.subid} <br />
               <a href="${url}" download="${properties.subid}.geojson" style="color: blue; text-decoration: underline;">Download GeoJSON</a>
             </div>
-          `;
-
-        const popup = L.popup()
-          .setLatLng(event.latlng)
-          .setContent(popupContent)
+          `
+          )
           .openOn(mapRef.current);
 
-        popup.on("add", () => {
-          stateRef.current.isPopupOpen = true;
-          resetCursor();
-        });
-
-        popup.on("remove", () => {
-          stateRef.current.isPopupOpen = false;
-          resetCursor();
+        popup.current.on("remove", () => {
           URL.revokeObjectURL(url);
         });
-
-        stateRef.current.currentPopup = popup;
       } catch (error) {
         console.error("Error fetching GeoJSON:", error);
-
-        const popupContent = `
-            <div style="max-width: 250px; word-wrap: break-word; color: red;">
-              <strong>Error:</strong> Failed to fetch GeoJSON for SubId ${properties.subid}.
-            </div>
-          `;
-
-        const popup = L.popup()
+        popup.current
           .setLatLng(event.latlng)
-          .setContent(popupContent)
+          .setContent("<div style='color: red;'>Failed to fetch GeoJSON</div>")
           .openOn(mapRef.current);
-
-        stateRef.current.currentPopup = popup;
       }
     };
 
     const handleMouseDown = () => {
       stateRef.current.isDragging = true;
+      updateCursor("grabbing");
     };
 
     const handleMouseUp = () => {
       stateRef.current.isDragging = false;
+      updateCursor(stateRef.current.hoverHighlight ? "pointer" : "grab");
     };
 
     vectorTileLayer.on("mouseover", handleMouseOver);
