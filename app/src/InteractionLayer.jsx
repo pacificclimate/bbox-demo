@@ -1,8 +1,9 @@
 import { useMapEvents } from "react-leaflet";
-import { useRef, useCallback, useEffect, memo } from "react";
+import { useState, useRef, useCallback, useEffect, memo } from "react";
 import PropTypes from "prop-types";
 import L from "leaflet";
 import "leaflet.vectorgrid";
+import DataSelectionTable from "./DataSelectionTable";
 
 const InteractionLayer = ({ baseStyles, interactionStyles }) => {
   const stateRef = useRef({
@@ -16,7 +17,9 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
   const mapRef = useRef(null);
   const popup = useRef(L.popup({ className: "custom-popup", autoPan: false }));
 
-  // Function to update the map container's cursor
+  const [showDataTable, setShowDataTable] = useState(false);
+  const [selectedSubId, setSelectedSubId] = useState(null);
+
   const updateCursor = (() => {
     let lastCursor = null;
     return (cursor) => {
@@ -31,7 +34,6 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
     };
   })();
 
-  // Clear hover highlight
   const clearHoverHighlight = useCallback(() => {
     if (stateRef.current.hoverHighlight && vectorTileLayerRef.current) {
       if (stateRef.current.hoverHighlight !== stateRef.current.clickedFeature) {
@@ -52,6 +54,7 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
     };
   }, []);
 
+  // Map event handlers
   const map = useMapEvents({
     zoomstart: () => {
       clearHoverHighlight();
@@ -80,14 +83,14 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
       "https://beehive.pacificclimate.org/bbox-server/xyz/water_tiles/{z}/{x}/{y}.mvt",
       {
         vectorTileLayerStyles: baseStyles,
-        maxNativeZoom: 14,
+        maxNativeZoom: 13,
         interactive: true,
         getFeatureId: (feature) => feature.properties.uid,
         updateWhenIdle: true,
         updateWhenZooming: true,
         keepBuffer: 1,
         preferCanvas: true,
-        zIndex: 1  
+        zIndex: 1,
       }
     );
 
@@ -131,7 +134,8 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
       if (stateRef.current.isDragging) return;
 
       const { uid, properties, layerType } = getFeatureInfo(event);
-
+      setSelectedSubId(properties.subid);
+      setShowDataTable(true);
       // Reset previous clicked feature if exists
       if (stateRef.current.clickedFeature && vectorTileLayerRef.current) {
         vectorTileLayerRef.current.resetFeatureStyle(
@@ -152,7 +156,6 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
 
       try {
         const collection = layerType === "lakes" ? "lakes" : "rivers";
-
         const response = await fetch(
           `https://beehive.pacificclimate.org/bbox-server/collections/${collection}/items/${properties.subid}.json`
         );
@@ -162,7 +165,6 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
         }
 
         const geoJson = await response.json();
-
         const blob = new Blob([JSON.stringify(geoJson, null, 2)], {
           type: "application/json",
         });
@@ -217,7 +219,34 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
     };
   }, [baseStyles, interactionStyles, getFeatureInfo, clearHoverHighlight]);
 
-  return null;
+  const handleCloseDataTable = useCallback(() => {
+    setShowDataTable(false);
+    setSelectedSubId(null);
+
+    // Reset clicked feature styling
+    if (stateRef.current.clickedFeature && vectorTileLayerRef.current) {
+      vectorTileLayerRef.current.resetFeatureStyle(
+        stateRef.current.clickedFeature
+      );
+      stateRef.current.clickedFeature = null;
+    }
+
+    if (stateRef.current.currentPopup) {
+      mapRef.current.closePopup(stateRef.current.currentPopup);
+    }
+  }, []);
+
+  return (
+    <>
+      {null}
+      {showDataTable && selectedSubId && (
+        <DataSelectionTable
+          featureId={selectedSubId}
+          onClose={handleCloseDataTable}
+        />
+      )}
+    </>
+  );
 };
 
 InteractionLayer.propTypes = {

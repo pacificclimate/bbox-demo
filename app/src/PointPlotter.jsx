@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, memo } from "react";
 import { circleMarker } from "leaflet";
+import L from "leaflet";
 import proj4 from "proj4";
 import { useMap } from "react-leaflet";
 
@@ -8,6 +9,14 @@ const PointPlotter = () => {
   const [projType, setProjType] = useState("albers");
   const map = useMap();
   const currentMarkerRef = useRef(null);
+
+  useEffect(() => {
+    if (!map.getPane("markers")) {
+      map.createPane("markers");
+      map.getPane("markers").style.zIndex = 650;
+      map.getPane("markers").style.pointerEvents = "none";
+    }
+  }, [map]);
 
   const albersProj =
     "+proj=aea +lat_1=50 +lat_2=58.5 +lat_0=45 +lon_0=-126 +x_0=1000000 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs";
@@ -85,12 +94,14 @@ const PointPlotter = () => {
 
       // Create and add new marker
       currentMarkerRef.current = circleMarker(coordinates, {
+        pane: "markers",
         radius: 8,
         fillColor: "#1b9e77",
         color: "#000",
         weight: 1,
         opacity: 1,
         fillOpacity: 0.8,
+        interactive: false,
       }).addTo(map);
 
       map.flyTo(coordinates, map.getZoom(), {
