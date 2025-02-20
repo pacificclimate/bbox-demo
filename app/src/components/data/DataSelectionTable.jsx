@@ -67,7 +67,7 @@ const DataSelectionTable = ({ featureId, onClose }) => {
     <div className={`data-selection ${shake ? "shake" : ""}`}>
       <form onSubmit={(e) => e.preventDefault()}>
         <div className="header">
-          <h2>Download Data</h2>
+          <h2>Download Timeseries Data</h2>
           <button type="button" onClick={onClose} className="close-button">
             ✕
           </button>
