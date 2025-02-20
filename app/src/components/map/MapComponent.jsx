@@ -2,7 +2,9 @@ import { BCBaseMap } from "pcic-react-leaflet-components";
 import { useRef, useEffect } from "react";
 import InteractionLayer from "./InteractionLayer.jsx";
 import PointPlotter from "./PointPlotter.jsx";
-import { baseStyles, interactionStyles } from "./styles.js";
+import LogoBox from "../info/LogoBox.jsx";
+import HelpGuide from "../info/HelpGuide.jsx";
+import { baseStyles, interactionStyles } from "../../styles.js";
 
 const MapComponent = () => {
   const mapRef = useRef(null);
@@ -20,6 +22,7 @@ const MapComponent = () => {
   useEffect(() => {
     if (mapRef.current) {
       const map = mapRef.current.leafletElement;
+
       if (map) {
         // Apply hardware acceleration
         const container = map.getContainer();
@@ -54,13 +57,15 @@ const MapComponent = () => {
       updateWhenIdle={true}
       // Bounds
       maxBounds={maxBounds}
-      maxBoundsViscosity={0.01}
+      maxBoundsViscosity={0}
       // Animation
       fadeAnimation={true}
       zoomAnimation={true}
       zoomAnimationThreshold={4}
       markerZoomAnimation={true}
     >
+      <LogoBox projectName="FlowCast" />
+      <HelpGuide />
       <InteractionLayer
         baseStyles={baseStyles}
         interactionStyles={interactionStyles}

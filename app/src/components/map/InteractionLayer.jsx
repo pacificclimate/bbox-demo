@@ -3,7 +3,7 @@ import { useState, useRef, useCallback, useEffect, memo } from "react";
 import PropTypes from "prop-types";
 import L from "leaflet";
 import "leaflet.vectorgrid";
-import DataSelectionTable from "./DataSelectionTable";
+import DataSelectionTable from "../data/DataSelectionTable.jsx";
 
 const InteractionLayer = ({ baseStyles, interactionStyles }) => {
   const stateRef = useRef({

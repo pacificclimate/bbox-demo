@@ -3,6 +3,7 @@ import { circleMarker } from "leaflet";
 import L from "leaflet";
 import proj4 from "proj4";
 import { useMap } from "react-leaflet";
+import "./PointPlotter.css";
 
 const PointPlotter = () => {
   const [coords, setCoords] = useState({ x: "", y: "" });

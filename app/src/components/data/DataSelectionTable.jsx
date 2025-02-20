@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
-import { getAvailableOptions, downloadTimeseries } from "./services/api";
+import { getAvailableOptions, downloadTimeseries } from "../../services/api.js";
+import "./DataSelection.css";
 
 const DataSelectionTable = ({ featureId, onClose }) => {
   const [options, setOptions] = useState({
