@@ -4,6 +4,7 @@ import { getAvailableOptions, downloadTimeseries } from "../../services/api.js";
 import "./DataSelection.css";
 
 const DataSelectionTable = ({ featureId, onClose }) => {
+  const outletId = `sub${featureId}`;
   const [options, setOptions] = useState({
     models: [],
     scenarios: [],
@@ -20,8 +21,7 @@ const DataSelectionTable = ({ featureId, onClose }) => {
 
   useEffect(() => {
     const fetchOptions = async () => {
-      try {
-        const outletId = `sub${featureId}`;
+      try { 
         const availableOptions = await getAvailableOptions(outletId);
         setOptions(availableOptions);
       } catch (error) {
@@ -31,7 +31,7 @@ const DataSelectionTable = ({ featureId, onClose }) => {
     };
 
     fetchOptions();
-  }, [featureId]);
+  }, [outletId]);
 
   const handleChange = (field, value) => {
     setSelections((prev) => ({
@@ -54,14 +54,14 @@ const DataSelectionTable = ({ featureId, onClose }) => {
 
     setIsLoading(true);
     try {
-      await downloadTimeseries(featureId, selections);
+      await downloadTimeseries(outletId, selections);
     } catch (error) {
       console.error("Download error:", error);
       alert("Failed to download data");
     } finally {
       setIsLoading(false);
     }
-  }, [featureId, selections]);
+  }, [outletId, selections]);
 
   return (
     <div className={`data-selection ${shake ? "shake" : ""}`}>
