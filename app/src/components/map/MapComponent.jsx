@@ -64,7 +64,7 @@ const MapComponent = () => {
       zoomAnimationThreshold={4}
       markerZoomAnimation={true}
     >
-      <LogoBox projectName="FlowCast" />
+      <LogoBox projectName="Vector Hydrologic Model Output" />
       <HelpGuide />
       <InteractionLayer
         baseStyles={baseStyles}
