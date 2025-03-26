@@ -142,7 +142,6 @@ const PointPlotter = () => {
         <button
           type="button"
           onClick={clearMarker}
-          style={{ marginLeft: "10px" }}
         >
           Clear Marker
         </button>
