@@ -1,5 +1,5 @@
 # Stage 1: Build the Vite app
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -10,7 +10,7 @@ COPY ./app /app
 RUN npm run build
 
 # Stage 2: Serve
-FROM node:18-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 

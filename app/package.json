@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "docker-build": "docker build --file ../docker/app/Dockerfile --tag vec-hydro-portal ../",
+    "docker-run": "docker run --rm -p 3001:8080 vec-hydro-portal"
   },
   "dependencies": {
     "leaflet": "^1.9.4",
