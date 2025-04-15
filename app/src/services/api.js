@@ -1,3 +1,4 @@
+// TODO: Update this URL with the live api
 const BASE_URL = "https://beehive.pacificclimate.org/hydromosaic/api";
 
 const formatUnit = (unit) => {
