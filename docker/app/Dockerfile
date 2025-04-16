@@ -14,10 +14,10 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-RUN npm install -g serve
+RUN npm install -g http-server
 
 COPY --from=builder /app/dist /app/dist
 
 EXPOSE 8080
 
-CMD ["serve", "dist", "-p", "8080"]
+CMD ["http-server", "dist", "-p", "8080"]
