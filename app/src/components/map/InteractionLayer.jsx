@@ -80,7 +80,7 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
     if (!mapRef.current) return;
 
     const vectorTileLayer = L.vectorGrid.protobuf(
-      `https://${window.env.REACT_APP_SERVER_HOST}/bbox-server/xyz/water_tiles/{z}/{x}/{y}.mvt`,
+      `${window.location.origin}/bbox-server/xyz/water_tiles/{z}/{x}/{y}.mvt`,
       {
         vectorTileLayerStyles: baseStyles,
         maxNativeZoom: 13,
@@ -157,7 +157,7 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
       try {
         const collection = layerType === "lakes" ? "lakes" : "rivers";
         const response = await fetch(
-          `https://${window.env.REACT_APP_SERVER_HOST}/bbox-server/collections/${collection}/items/${properties.subid}.json`
+          `${window.location.origin}/bbox-server/collections/${collection}/items/${properties.subid}.json`
         );
 
         if (!response.ok) {
