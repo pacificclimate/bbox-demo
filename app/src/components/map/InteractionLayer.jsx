@@ -86,7 +86,7 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
       p.style.pointerEvents = "auto";
     }
     const vectorTileLayer = L.vectorGrid.protobuf(
-      `${window.location.origin}/bbox-server/xyz/water_tiles/{z}/{x}/{y}.mvt`,
+      `${process.env.REACT_APP_BBOX_URL}/xyz/water_tiles/{z}/{x}/{y}.mvt`,
       {
         vectorTileLayerStyles: baseStyles,
         maxNativeZoom: 13,
@@ -140,6 +140,8 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
     const handleClick = async (event) => {
       if (stateRef.current.isDragging) return;
 
+	  console.log(event)
+
       const { uid, properties, layerType } = getFeatureInfo(event);
       setSelectedSubId(properties.subid);
       setShowDataTable(true);
@@ -164,7 +166,8 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
       try {
         const collection = layerType === "lakes" ? "lakes" : "rivers";
         const response = await fetch(
-          `${window.location.origin}/bbox-server/collections/${collection}/items/${properties.subid}.json`
+          `${process.env.REACT_APP_BBOX_URL}/collections/${collection}/items/${properties.subid}.json`
+
         );
 
         if (!response.ok) {

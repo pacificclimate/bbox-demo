@@ -10,6 +10,8 @@ export default defineConfig({
     EnvironmentPlugin({
       REACT_APP_BC_BASE_MAP_TILES_URL:
         "https://swarm.pacificclimate.org/tiles/bc-albers-lite/{z}/{x}/{y}.png",
+	  REACT_APP_BBOX_URL:
+	     "https://beehive.pacificclimate.org/bbox-server",
     }),
   ],
   base: "/vec-hydro-portal",
@@ -18,9 +20,9 @@ export default defineConfig({
     warmup: {
       clientFiles: [
         "src/styles.js",
-        "src/MapComponent.jsx",
-        "src/InteractionLayer.jsx",
-        "src/PointPlotter.jsx",
+        "src/components/map/MapComponent.jsx",
+        "src/components/map/InteractionLayer.jsx",
+        "src/components/map/PointPlotter.jsx",
       ],
     },
     port: 3000,
