@@ -12,6 +12,8 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
     isPopupOpen: false,
     clickedFeature: null,
     isDragging: false,
+	upstreamFeatures: [],
+	downstreamFeatures: [],
   });
   const vectorTileLayerRef = useRef(null);
   const mapRef = useRef(null);
@@ -140,8 +142,6 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
     const handleClick = async (event) => {
       if (stateRef.current.isDragging) return;
 
-	  console.log(event)
-
       const { uid, properties, layerType } = getFeatureInfo(event);
       setSelectedSubId(properties.subid);
       setShowDataTable(true);
@@ -202,6 +202,52 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
           .setContent("<div style='color: red;'>Failed to fetch GeoJSON</div>")
           .openOn(mapRef.current);
       }
+
+      // handle calculating and highlighting the downstream path
+      // at present, we only "follow" rivers downstream, the path stops
+      // as soon as it reaches a lake or the sea (dowsubid = -1)
+      // each downstream path segment is loaded via a separate API call,
+      // so this is very inefficient.
+      // TODO: speed up, styling
+
+	  // clear existing downstream path
+	  if (stateRef.current.downstreamFeatures.length > 0 && vectorTileLayerRef.current) {
+        for(const id of stateRef.current.downstreamFeatures) {
+            vectorTileLayerRef.current.resetFeatureStyle(id);
+        }
+	  }
+
+      // fetch current downstream list
+      let currentSegment = properties;
+      let downstreamList = [];
+      try {
+        while(currentSegment.dowsubid != -1) {
+
+          const response = await fetch(
+    	    `${process.env.REACT_APP_BBOX_URL}/collections/rivers/items/${currentSegment.dowsubid}.json`
+          );
+
+          if (!response.ok) {
+            throw new Error(`Failed to fetch GeoJSON: ${response.statusText}`);
+          }
+
+          const fetched =  await response.json();
+          const gj = JSON.stringify(fetched, null, 2)
+
+          downstreamList.push(fetched.properties["uid"]);
+          currentSegment = fetched.properties;
+        }
+
+	  } catch (error) {
+        console.error("Error fetching downstream region:", error);
+	  }
+	  stateRef.current.downstreamFeatures = downstreamList
+
+	  for(const id of downstreamList) {
+        vectorTileLayer.setFeatureStyle(
+          id, interactionStyles.highlight["downstream"]
+        );
+	  }
     };
 
     const handleMouseDown = () => {
