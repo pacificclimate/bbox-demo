@@ -11,9 +11,12 @@ done
 
 echo "Reading DB password from secret..."
 POSTGRES_PASSWORD=`cat /run/secrets/bbox-postgis-SU`
+
+echo "Parsing DB host from DB_DSN..."
+DB_HOST=$(echo "$DB_DSN" | sed -E 's#^postgresql://[^@]+@([^:/?]+).*#\1#')
+
 echo "Constructing DSN..."
-BBOX_DB_DSN="postgresql://bbox_user:${POSTGRES_PASSWORD}@postgis:5432/bbox_postgres"
-export BBOX_DB_DSN
+export BBOX_DB_DSN="postgresql://bbox_user:${POSTGRES_PASSWORD}@${DB_HOST}:5432/bbox_postgres"
 
 echo "Data is ready. Substituting environment variables..."
 envsubst < /tmp/bbox.template.toml > /app/bbox.toml
