@@ -44,6 +44,59 @@ fid_field = "subid"
 geometry_field = "geojson"
 queryable_fields = ["Uid","SubId"]
 
+[[collection]]
+name = "upstreams"
+title = "Upstreams"
+description = "Upstream Watershed Features"
+[collection.postgis]
+datasource = "postgis_db"
+sql = """
+WITH RECURSIVE drainage(subid, downsubid, mouth) AS (
+  SELECT subid, dowsubid, subid AS mouth
+  FROM rivers
+
+  UNION ALL
+
+  SELECT rivers.subid, rivers.dowsubid, drainage.mouth
+  FROM drainage, rivers
+  WHERE drainage.subid = rivers.dowsubid)
+
+SELECT mouth AS subid,
+  string_agg(text(subid), ', ') AS upstreams,
+  ST_Point(48, -123) AS geojson
+FROM drainage GROUP BY mouth
+"""
+fid_field = "subid"
+geometry_field = "geojson"
+queryable_fields = ["SubId"]
+
+[[collection]]
+name="downstreams"
+title="Downstreams"
+description="Downstream Path Features"
+[collection.postgis]
+datasource="postgis_db"
+sql = """
+WITH RECURSIVE course(subid, downsubid, origin) AS (
+
+  SELECT subid, dowsubid, subid AS origin
+  FROM rivers
+
+  UNION ALL
+
+  SELECT rivers.subid, rivers.dowsubid, course.origin
+  FROM course, rivers
+  WHERE course.downsubid = rivers.subid)
+SELECT origin AS subid,
+  string_agg(text(subid), ', ') AS downstreams,
+  ST_Point(48, -123) AS geojson
+FROM course GROUP BY origin
+"""
+fid_field = "subid"
+geometry_field = "geojson"
+queryable_fields = ["SubId"]
+
+
 [[grid]]
 json = "assets/BCAlbersCustomGrid.json"
 
