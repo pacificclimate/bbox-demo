@@ -142,8 +142,6 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
 
     const handleClick = async (event) => {
       if (stateRef.current.isDragging) return;
-	  
-	  console.log("here is the vector layer ref", vectorTileLayerRef);
 
       const { uid, properties, layerType } = getFeatureInfo(event);
       setSelectedSubId(properties.subid);
@@ -206,38 +204,39 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
           .openOn(mapRef.current);
       }
 
-	    // clear existing downstream path
-	    if (stateRef.current.downstreamFeatures.length > 0 && vectorTileLayerRef.current) {
-          for(const id of stateRef.current.downstreamFeatures) {
-              vectorTileLayerRef.current.resetFeatureStyle(id);
+	    // clear existing downstream and upstream feature highlights
+      for (const streamNetwork of [stateRef.current.downstreamFeatures, stateRef.current.upstreamFeatures]) {
+        if (streamNetwork.length > 0 && vectorTileLayerRef.current) {
+          for (const id of streamNetwork) {
+            vectorTileLayerRef.current.resetFeatureStyle(id);
           }
-	    }
+        }
+      }
 
       // fetch and highlight downstream features
-      const downstreamList = await fetchDownstreams(properties.subid);
-      console.log("Downstreams:", downstreamList);
-
-      stateRef.current.downstreamFeatures = downstreamList;
-
-	    for(const id of downstreamList) {
-          console.log("Setting downstream feature style for ID:", id);
+      try {
+        const downstreamList = await fetchDownstreams(properties.subid);
+        stateRef.current.downstreamFeatures = downstreamList;
+        for (const id of downstreamList) {
           vectorTileLayer.setFeatureStyle(
             parseInt(id), interactionStyles.highlight["downstream"]
           );
-	    }
-
-      // fetch and highlight upstream features
-      const upstreamList = await fetchUpstreams(properties.subid);
-      console.log("Upstreams:", upstreamList);
-
-      stateRef.current.upstreamFeatures = upstreamList;
-
-      for(const id of upstreamList) {
-        vectorTileLayer.setFeatureStyle(
-          id, interactionStyles.highlight["upstream"]
-        );
+        }
+      } catch (error) {
+        console.error("Error fetching downstream features:", error);
       }
 
+      // fetch and highlight upstream features
+      try {
+        const upstreamList = await fetchUpstreams(properties.subid);
+        stateRef.current.upstreamFeatures = upstreamList;
+        for (const id of upstreamList) {
+          vectorTileLayer.setFeatureStyle(
+            id, interactionStyles.highlight["upstream"]
+        );
+      } catch (error) {
+        console.error("Error fetching upstream features:", error);
+      }
     };
 
     const handleMouseDown = () => {

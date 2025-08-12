@@ -51,19 +51,20 @@ description = "Upstream Watershed Features"
 [collection.postgis]
 datasource = "postgis_db"
 sql = """
-WITH RECURSIVE drainage(subid, downsubid, mouth) AS (
-  SELECT subid, dowsubid, subid AS mouth
+WITH RECURSIVE drainage(subid, downsubid, uid, mouth) AS (
+  SELECT subid, dowsubid, uid, subid AS mouth
   FROM rivers
 
   UNION ALL
 
-  SELECT rivers.subid, rivers.dowsubid, drainage.mouth
+  SELECT rivers.subid, rivers.dowsubid, rivers.uid, drainage.mouth
   FROM drainage, rivers
   WHERE drainage.subid = rivers.dowsubid)
 
-SELECT mouth AS subid,
-  string_agg(text(subid), ', ') AS upstreams,
-  ST_Point(48, -123) AS geojson
+SELECT mouth AS subid, 
+  string_agg(text(subid), ', ') AS upstream_subids,
+  string_agg(text(uid), ', ') AS upstream_uids, 
+  ST_Point(48, -123) AS geojson 
 FROM drainage GROUP BY mouth
 """
 fid_field = "subid"
@@ -77,25 +78,25 @@ description="Downstream Path Features"
 [collection.postgis]
 datasource="postgis_db"
 sql = """
-WITH RECURSIVE course(subid, downsubid, origin) AS (
+WITH RECURSIVE course(subid, downsubid, uid, origin) AS (
 
-  SELECT subid, dowsubid, subid AS origin
+  SELECT subid, dowsubid, uid, subid AS origin
   FROM rivers
 
   UNION ALL
 
-  SELECT rivers.subid, rivers.dowsubid, course.origin
+  SELECT rivers.subid, rivers.dowsubid,rivers.uid, course.origin
   FROM course, rivers
   WHERE course.downsubid = rivers.subid)
 SELECT origin AS subid,
-  string_agg(text(subid), ', ') AS downstreams,
+  string_agg(text(subid), ', ') AS downstream_subids,
+  string_agg(text(uid), ', ') AS downstream_uids,
   ST_Point(48, -123) AS geojson
 FROM course GROUP BY origin
 """
 fid_field = "subid"
 geometry_field = "geojson"
 queryable_fields = ["SubId"]
-
 
 [[grid]]
 json = "assets/BCAlbersCustomGrid.json"
