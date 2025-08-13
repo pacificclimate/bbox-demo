@@ -8,6 +8,7 @@ import "./PointPlotter.css";
 const PointPlotter = () => {
   const [coords, setCoords] = useState({ x: "", y: "" });
   const [projType, setProjType] = useState("albers");
+  const [cursorXY, setCursorXY] = useState(null);
   const map = useMap();
   const currentMarkerRef = useRef(null);
 
@@ -55,6 +56,13 @@ const PointPlotter = () => {
       console.error("Conversion error:", error);
       return null;
     }
+  };
+
+  const latLngToSelectedProj = (lat, lon) => {
+    if (projType === "wgs84") return [lon, lat];
+    const toProj = projType === "albers" ? albersProj : mercatorProj;
+    const [x, y] = proj4(wgs84Proj, toProj, [lon, lat]);
+    return [x, y];
   };
 
   const isWithinBounds = ([lat, lon]) => {
@@ -114,6 +122,30 @@ const PointPlotter = () => {
     setCoords({ x: "", y: "" });
   };
 
+  useEffect(() => {
+    let raf = null;
+
+    const onMove = (e) => {
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const { lat, lng } = e.latlng;
+        const [x, y] = latLngToSelectedProj(lat, lng);
+        // format: meters for Albers/Mercator, degrees for WGS84
+        const digits = projType === "wgs84" ? 5 : 1;
+        setCursorXY([
+          Number.isFinite(x) ? x.toFixed(digits) : "",
+          Number.isFinite(y) ? y.toFixed(digits) : "",
+        ]);
+      });
+    };
+
+    map.on("mousemove", onMove);
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      map.off("mousemove", onMove);
+    };
+  }, [map, projType]);
+
   return (
     <div className="point-plotter">
       <form onSubmit={plotPoint}>
@@ -138,11 +170,27 @@ const PointPlotter = () => {
           <option value="mercator">Web Mercator</option>
           <option value="wgs84">WGS84 (Latitude/Longitude)</option>
         </select>
+
+        <div className="coord-readout">
+          <div className="coord-title">Cursor</div>
+          <div className="coord-values">
+            {cursorXY ? (
+              <>
+                <span className="coord-x">
+                  {projType === "wgs84" ? "Lon" : "X"}: {cursorXY[0]}
+                </span>
+                <span className="coord-y">
+                  {projType === "wgs84" ? "Lat" : "Y"}: {cursorXY[1]}
+                </span>
+              </>
+            ) : (
+              <span className="coord-empty">Move cursor over map…</span>
+            )}
+          </div>
+        </div>
+
         <button type="submit">Plot Point</button>
-        <button
-          type="button"
-          onClick={clearMarker}
-        >
+        <button type="button" onClick={clearMarker}>
           Clear Marker
         </button>
       </form>
