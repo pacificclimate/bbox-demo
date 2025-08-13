@@ -1,0 +1,48 @@
+.point-plotter {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    background-color: rgb(255, 255, 255, 0.7);
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    min-width: 100px;
+    font-family: Arial, sans-serif;
+  }
+  
+  .point-plotter form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .point-plotter input,
+  .point-plotter select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  
+  .point-plotter input:focus,
+  .point-plotter select:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 4px rgba(0, 123, 255, 0.5);
+  }
+  
+  .point-plotter button {
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .point-plotter button:hover {
+    background-color: #0056b3;
+  }
+  
