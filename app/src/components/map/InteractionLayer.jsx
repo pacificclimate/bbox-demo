@@ -210,10 +210,12 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
       try {
         const downstreamList = await fetchDownstreams(properties.subid);
         stateRef.current.downstreamFeatures = downstreamList;
-        for (const id of downstreamList) {
-          vectorTileLayer.setFeatureStyle(
-            parseInt(id), interactionStyles.highlight["downstream"]
-          );
+        for (const uid of downstreamList) {
+          if (parseInt(uid) != properties.uid) {
+            vectorTileLayer.setFeatureStyle(
+              parseInt(uid), interactionStyles.highlight["downstream"]
+            );
+          }
         }
       } catch (error) {
         console.error("Error fetching downstream features:", error);
@@ -223,10 +225,13 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
       try {
         const upstreamList = await fetchUpstreams(properties.subid);
         stateRef.current.upstreamFeatures = upstreamList;
-        for (const id of upstreamList) {
-          vectorTileLayer.setFeatureStyle(
-            id, interactionStyles.highlight["upstream"]
-        );
+        for (const uid of upstreamList) {
+          if (parseInt(uid) != properties.uid) {
+            vectorTileLayer.setFeatureStyle(
+              parseInt(uid), interactionStyles.highlight["upstream"]
+            );
+          }
+        }
       } catch (error) {
         console.error("Error fetching upstream features:", error);
       }

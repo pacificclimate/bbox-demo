@@ -81,7 +81,7 @@ The app connects to the PCIC Hydromosaic API for:
 ## Environment Variables
 
 - `REACT_APP_BC_BASE_MAP_TILES_URL`: Base map tile URL (defaults to PCIC swarm server)
-- `REACT_APP_BBOX_URL`: bbox URL (defaults to current host/bbox-server)
+- `REACT_APP_BBOX_URL`: bbox URL (defaults to dev instance on beehive)
 
 ## Docker Images
 
