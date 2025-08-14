@@ -43,8 +43,6 @@
     overflow-y: auto;
     position: relative;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    scrollbar-width: thin;
-    scrollbar-color: #90A4AE #CFD8DC;
   }
   
   .close-button {
@@ -79,12 +77,12 @@
   .help-content::-webkit-scrollbar {
     width: 8px;
   }
-  
   .help-content::-webkit-scrollbar-track {
-    background: #CFD8DC;
-    border-radius: 4px;
+    background: transparent;
+    border-radius: 12px;
+    margin-top: 12px;
+    margin-bottom: 12px;
   }
-  
   .help-content::-webkit-scrollbar-thumb {
     background-color: #90A4AE;
     border-radius: 4px;

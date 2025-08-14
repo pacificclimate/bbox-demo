@@ -1,8 +1,32 @@
-import { useState } from "react";
-import PropTypes from "prop-types";
+import { useState, useEffect, useRef } from "react";
+import { useMap } from "react-leaflet";
 import "./HelpGuide.css";
+
 const HelpGuide = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const map = useMap();
+  const contentRef = useRef(null);
+
+  // Toggle map scroll-zoom while the guide is open
+  useEffect(() => {
+    if (!map) return;
+    if (isOpen) {
+      map.scrollWheelZoom.disable();
+    } else {
+      map.scrollWheelZoom.enable();
+    }
+  }, [isOpen, map]);
+
+  // Close on Escape
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") setIsOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isOpen]);
+  const stopScroll = (e) => e.stopPropagation();
 
   return (
     <>
@@ -15,8 +39,19 @@ const HelpGuide = () => {
       </button>
 
       {isOpen && (
-        <div className="help-overlay">
-          <div className="help-content">
+        <div
+          className="help-overlay"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setIsOpen(false); // Outside click: close
+          }}
+        >
+          <div
+            className="help-content"
+            ref={contentRef}
+            onWheel={stopScroll}
+            onTouchMove={stopScroll}
+            onClick={(e) => e.stopPropagation()}
+          >
             <button className="close-button" onClick={() => setIsOpen(false)}>
               ✕
             </button>
@@ -83,8 +118,11 @@ const HelpGuide = () => {
                   <strong>CanESM2</strong>:{" "}
                   <a
                     href="https://climate-modelling.canada.ca/climatemodeldata/cgcm4/CanESM2/index.shtml"
-                    target="_blank" rel="noopener noreferrer">
-                    Canadian Centre for Climate Modelling and Analysis ESM2 (Earth System Model ver. 2)
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Canadian Centre for Climate Modelling and Analysis ESM2
+                    (Earth System Model ver. 2)
                   </a>
                 </li>
                 <li>
