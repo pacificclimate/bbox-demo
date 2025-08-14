@@ -48,7 +48,7 @@ export const baseStyles = {
           weight: 4,
           color: "green",
           fillColor: "green",
-          fillOpacity: 0.5,
+          opacity:.5,
       }
     },
   };
