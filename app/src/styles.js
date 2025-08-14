@@ -37,7 +37,7 @@ export const interactionStyles = {
       weight: 4,
       color: "red",
       opacity: 1,
-    },
+      },
 	  downstream: {
 		  weight: 4,
 		  color: "green",
@@ -48,7 +48,7 @@ export const interactionStyles = {
       weight: 4,
       color: "green",
       fillColor: "green",
-      fillOpacity: 0.5,
+      opacity:.5,
     },
   },
 };

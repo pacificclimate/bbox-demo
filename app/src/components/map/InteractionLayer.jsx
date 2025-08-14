@@ -44,6 +44,16 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
           stateRef.current.hoverHighlight
         );
       }
+      if (stateRef.current.downstreamFeatures.includes(stateRef.current.hoverHighlight)) {
+        vectorTileLayerRef.current.setFeatureStyle(
+          stateRef.current.hoverHighlight, interactionStyles.highlight["downstream"]
+        );
+      }
+      if (stateRef.current.upstreamFeatures.includes(stateRef.current.hoverHighlight)) {
+        vectorTileLayerRef.current.setFeatureStyle(
+          stateRef.current.hoverHighlight, interactionStyles.highlight["upstream"]
+        );
+      }
       stateRef.current.hoverHighlight = null;
     }
   }, []);
@@ -216,11 +226,11 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
       // fetch and highlight downstream features
       try {
         const downstreamList = await fetchDownstreams(properties.subid);
-        stateRef.current.downstreamFeatures = downstreamList;
-        for (const uid of downstreamList) {
-          if (parseInt(uid) != properties.uid) {
+        stateRef.current.downstreamFeatures = downstreamList.filter(uid => uid !== properties.uid);
+        for (const uid of stateRef.current.downstreamFeatures) {
+          if (uid != properties.uid) {
             vectorTileLayer.setFeatureStyle(
-              parseInt(uid), interactionStyles.highlight["downstream"]
+              uid, interactionStyles.highlight["downstream"]
             );
           }
         }
@@ -231,11 +241,11 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
       // fetch and highlight upstream features
       try {
         const upstreamList = await fetchUpstreams(properties.subid);
-        stateRef.current.upstreamFeatures = upstreamList;
-        for (const uid of upstreamList) {
-          if (parseInt(uid) != properties.uid) {
+        stateRef.current.upstreamFeatures = upstreamList.filter(uid => uid !== properties.uid);
+        for (const uid of stateRef.current.upstreamFeatures) {
+          if (uid != properties.uid) {
             vectorTileLayer.setFeatureStyle(
-              parseInt(uid), interactionStyles.highlight["upstream"]
+              uid, interactionStyles.highlight["upstream"]
             );
           }
         }

@@ -11,7 +11,7 @@ const fetchStreamNetwork = async (subId, direction) => {
     }
     const json = await response.json();
     const network = json.properties[`${direction.substring(0, direction.length - 1)}_uids`];
-    return network.split(", "); 
+    return network.split(", ").map(uid => parseInt(uid));
 };
 
 export const fetchUpstreams = async (subId) => {
