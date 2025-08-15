@@ -45,4 +45,23 @@
   .point-plotter button:hover {
     background-color: #0056b3;
   }
-  
+  .coord-readout {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    gap: 6px 12px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+
+  .coord-title {
+    font-weight: 600;
+  }
+  .coord-values {
+    display: flex;
+    flex-direction: column;    /* stack X and Y */
+    gap: 2px;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1, "lnum" 1;
+  }
