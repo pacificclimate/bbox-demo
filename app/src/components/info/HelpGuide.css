@@ -1,89 +1,113 @@
 .help-trigger {
-    position: absolute;
-    bottom: 24px;
-    right: 24px;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.9);
-    border: none;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    cursor: pointer;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .question-mark {
-    font-size: 24px;
-    color: #007bff;
-    font-weight: bold;
-  }
-  
-  .help-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-  }
-  
-  .help-content {
-    background: white;
-    border-radius: 12px;
-    padding: 24px;
-    max-width: 600px;
-    max-height: 80vh;
-    overflow-y: auto;
-    position: relative;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
-  
-  .close-button {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    color: #666;
-  }
-  
-  .help-content h2 {
-    margin-top: 0;
-    color: #007bff;
-  }
-  
-  .help-content section {
-    margin: 20px 0;
-  }
-  
-  .help-content h3 {
-    color: #333;
-    margin-bottom: 12px;
-  }
-  
-  .help-content ul {
-    padding-left: 20px;
-  }
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-  .help-content::-webkit-scrollbar {
-    width: 8px;
-  }
-  .help-content::-webkit-scrollbar-track {
-    background: transparent;
-    border-radius: 12px;
-    margin-top: 12px;
-    margin-bottom: 12px;
-  }
-  .help-content::-webkit-scrollbar-thumb {
-    background-color: #90A4AE;
-    border-radius: 4px;
-  }
+.question-mark {
+  font-size: 24px;
+  color: #007bff;
+  font-weight: bold;
+}
+
+.help-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.help-content {
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-radius: 12px;
+  padding: 0;
+  max-width: 600;
+  max-height: 80vh;
+  position: relative;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* Sticky header area inside modal */
+.help-header {
+  position: sticky;
+  top: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: white;
+  border-bottom: 1px solid #ddd;
+  z-index: 1;
+}
+
+.help-header h2 {
+  margin: 0;
+  color: #222;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+}
+
+.close-button:hover {
+  color: #111;
+}
+
+.help-body {
+  padding: 24px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+   flex: 1;
+  min-height: 0;
+}
+
+.help-body section {
+  margin: 20px 0;
+}
+
+.help-body h3 {
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.help-body ul {
+  padding-left: 20px;
+}
+
+.help-body::-webkit-scrollbar {
+  width: 8px;
+}
+.help-body::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 12px;
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+.help-body::-webkit-scrollbar-thumb {
+  background-color: #90A4AE;
+  border-radius: 4px;
+}
