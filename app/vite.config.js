@@ -9,9 +9,7 @@ export default defineConfig({
 
     EnvironmentPlugin({
       REACT_APP_BC_BASE_MAP_TILES_URL:
-        "https://swarm.pacificclimate.org/tiles/bc-albers-lite/{z}/{x}/{y}.png",
-	  REACT_APP_BBOX_URL:
-	     "https://beehive.pacificclimate.org/upstream-bbox-server",
+       "https://swarm.pacificclimate.org/tiles/bc-albers-lite/{z}/{x}/{y}.png",
     }),
   ],
   base: "/upstream-vec-hydro-portal",

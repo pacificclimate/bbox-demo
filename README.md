@@ -74,6 +74,8 @@ docker\
 - **BBOX Server**: Configured via `bbox.template.toml`.
 - **Environment Variables**: Managed using `vite-plugin-environment` in `vite.config.js`.
 
+A BBox instance running at the same host is assumed by InteractionLayer.jsx and in bbox.js. If you are developing on localhost without a local bbox server, you may need to temporarily change references there during development.
+
 ## Deployment
 
 The project includes GitHub Actions workflows for Docker image publishing. Docker images for the app, data import, and BBOX server are automatically built and published upon branch pushes and tagged releases.
@@ -94,7 +96,6 @@ BC Geographic Warehouse (BCGW) [Public Map Server](https://delivery.maps.gov.bc.
 ## Environment Variables
 
 - `REACT_APP_BC_BASE_MAP_TILES_URL`: Base map tile URL (defaults to PCIC swarm server)
-- `REACT_APP_BBOX_URL`: bbox URL (defaults to dev instance on beehive)
 
 ## Docker Images
 
