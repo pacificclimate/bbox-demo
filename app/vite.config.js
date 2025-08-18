@@ -14,7 +14,7 @@ export default defineConfig({
 	     "https://beehive.pacificclimate.org/upstream-bbox-server",
     }),
   ],
-  base: "/vec-hydro-portal",
+  base: "/upstream-vec-hydro-portal",
   // Local Dev only
   server: {
     warmup: {
