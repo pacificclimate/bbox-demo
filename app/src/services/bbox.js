@@ -4,7 +4,7 @@
 
 const fetchStreamNetwork = async (subId, direction) => {
     const response = await fetch(
-        `${process.env.REACT_APP_BBOX_URL}/collections/${direction}/items/${subId}.json`
+        `${window.location.origin}/upstream-bbox-server/collections/${direction}/items/${subId}.json`
     );
     if (!response.ok) {
         throw new Error(`Failed to fetch ${direction}: ${response.statusText}`);
