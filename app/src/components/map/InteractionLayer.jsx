@@ -214,18 +214,15 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
           .openOn(mapRef.current);
       }
 
-	    // clear existing downstream and upstream feature highlights
-      for (const streamNetwork of [stateRef.current.downstreamFeatures, stateRef.current.upstreamFeatures]) {
-        if (streamNetwork.length > 0 && vectorTileLayerRef.current) {
-          for (const id of streamNetwork) {
-            vectorTileLayerRef.current.resetFeatureStyle(id);
-          }
-        }
-      }
-
       // fetch and highlight downstream features
       try {
         const downstreamList = await fetchDownstreams(properties.subid);
+        // clear current downstream features (after fetching new ones, to avoid race conditions)
+        if (stateRef.current.downstreamFeatures.length > 0 && vectorTileLayerRef.current) {
+          for (const id of stateRef.current.downstreamFeatures) {
+            vectorTileLayerRef.current.resetFeatureStyle(id);
+          }
+        }
         stateRef.current.downstreamFeatures = downstreamList.filter(uid => uid !== properties.uid);
         for (const uid of stateRef.current.downstreamFeatures) {
           if (uid != properties.uid) {
@@ -241,6 +238,12 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
       // fetch and highlight upstream features
       try {
         const upstreamList = await fetchUpstreams(properties.subid);
+        // clear current upstream features (after fetching new ones, to avoid race conditions)
+        if (stateRef.current.upstreamFeatures.length > 0 && vectorTileLayerRef.current) {
+          for (const id of stateRef.current.upstreamFeatures) {
+            vectorTileLayerRef.current.resetFeatureStyle(id);
+          }
+        }
         stateRef.current.upstreamFeatures = upstreamList.filter(uid => uid !== properties.uid);
         for (const uid of stateRef.current.upstreamFeatures) {
           if (uid != properties.uid) {

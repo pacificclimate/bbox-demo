@@ -40,15 +40,15 @@ export const interactionStyles = {
       },
 	  downstream: {
 		  weight: 4,
-		  color: "turquoise",
-		  fillColor: "turquoise",
-		  opacity: .5,
+		  color: "mediumvioletred",
+		  fillColor: "mediumvioletred",
+		  opacity: .6,
 	  },
     upstream: {
       weight: 4,
-      color: "slateblue",
-      fillColor: "slateblue",
-      opacity:.5,
+      color: "lightpink",
+      fillColor: "lightpink",
+      opacity:.6,
     },
   },
 };
