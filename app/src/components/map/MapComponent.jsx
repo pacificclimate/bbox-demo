@@ -4,7 +4,8 @@ import InteractionLayer from "./InteractionLayer.jsx";
 import PointPlotter from "./PointPlotter.jsx";
 import LogoBox from "../info/LogoBox.jsx";
 import HelpGuide from "../info/HelpGuide.jsx";
-import { baseStyles, interactionStyles } from "../../styles.js";
+import FwaNameSearch from "./FwaNameSearch.jsx";
+import { baseStyles, interactionStyles, fwaStyles } from "../../styles.js";
 
 const MapComponent = () => {
   const mapRef = useRef(null);
@@ -71,6 +72,7 @@ const MapComponent = () => {
         interactionStyles={interactionStyles}
       />
       <PointPlotter map={mapRef} />
+      <FwaNameSearch fwaStyles={fwaStyles} />
     </BCBaseMap>
   );
 };

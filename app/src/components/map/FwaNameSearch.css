@@ -1,0 +1,108 @@
+.fwa-search {
+  position: absolute;
+  top: 16px;
+  left: 46px;
+  z-index: 1200;
+  min-width: 320px;
+}
+
+.fwa-input-wrap {
+  position: relative;
+  width: 100%;
+}
+
+/* Search input */
+.fwa-input-wrap input {
+  width: 100%;
+  padding: 8px 28px 8px 12px; /* space for spinner */
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+}
+.fwa-input-wrap input:focus {
+  border-color: #007bff;
+  outline: none;
+  box-shadow: 0 0 4px rgba(0,123,255,0.5);
+}
+
+/* Inline spinner inside the input */
+.fwa-spinner {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(0,0,0,.2);
+  border-top-color: #007bff;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  animation: fwa-spin .8s linear infinite;
+  pointer-events: none;
+}
+@keyframes fwa-spin { to { transform: translateY(-50%) rotate(360deg); } }
+
+/* Dropdown */
+.fwa-input-wrap .results {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  margin: 0;
+  padding: 8px;
+  list-style: none;
+  max-height: 300px;
+  overflow: auto;
+  width: max(380px, 100%);
+  max-width: 520px;
+
+  background: rgba(255,255,255,0.97);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(2,8,23,0.12), 0 2px 6px rgba(2,8,23,0.08);
+
+  /* prevent layout shift when scrollbar appears */
+  scrollbar-gutter: stable both-edges;
+}
+
+/* Top-level rows */
+.result-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.result-row:hover { background: #f5f7fa; }
+
+.result-name {
+  font-weight: 700;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.result-meta {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  opacity: .7;
+}
+
+/* Sublist for multiple keys */
+.result-sublist {
+  margin: 6px 4px 2px 14px;
+  padding: 0;
+  list-style: none;
+  border-left: 2px solid #e2e8f0;
+}
+.result-subitem {
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.result-subitem:hover { background: #f5f7fa; }
+.result-submeta { opacity: .75; white-space: nowrap; }
