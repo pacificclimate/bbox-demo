@@ -38,6 +38,18 @@ export const baseStyles = {
         color: "red",
         opacity: 1,
       },
+	    downstream: {
+		    weight: 4,
+		    color: "#e7298a",
+		    fillColor: "#e7298a",
+		    opacity: 1,
+	    },
+      upstream: {
+          weight: 4,
+          color: "#c994c7",
+          fillColor: "#c994c7",
+          opacity:1,
+      }
     },
   };
   

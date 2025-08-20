@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 import L from "leaflet";
 import "leaflet.vectorgrid";
 import DataSelectionTable from "../data/DataSelectionTable.jsx";
+import { fetchDownstreams, fetchUpstreams } from "../../services/bbox.js";
 
 const InteractionLayer = ({ baseStyles, interactionStyles }) => {
   const stateRef = useRef({
@@ -12,6 +13,8 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
     isPopupOpen: false,
     clickedFeature: null,
     isDragging: false,
+	upstreamFeatures: [],
+	downstreamFeatures: [],
   });
   const vectorTileLayerRef = useRef(null);
   const mapRef = useRef(null);
@@ -39,6 +42,16 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
       if (stateRef.current.hoverHighlight !== stateRef.current.clickedFeature) {
         vectorTileLayerRef.current.resetFeatureStyle(
           stateRef.current.hoverHighlight
+        );
+      }
+      if (stateRef.current.downstreamFeatures.includes(stateRef.current.hoverHighlight)) {
+        vectorTileLayerRef.current.setFeatureStyle(
+          stateRef.current.hoverHighlight, interactionStyles.highlight["downstream"]
+        );
+      }
+      if (stateRef.current.upstreamFeatures.includes(stateRef.current.hoverHighlight)) {
+        vectorTileLayerRef.current.setFeatureStyle(
+          stateRef.current.hoverHighlight, interactionStyles.highlight["upstream"]
         );
       }
       stateRef.current.hoverHighlight = null;
@@ -80,7 +93,7 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
     if (!mapRef.current) return;
 
     const vectorTileLayer = L.vectorGrid.protobuf(
-      `${window.location.origin}/bbox-server/xyz/water_tiles/{z}/{x}/{y}.mvt`,
+      `${window.location.origin}/upstream-bbox-server/xyz/water_tiles/{z}/{x}/{y}.mvt`,
       {
         vectorTileLayerStyles: baseStyles,
         maxNativeZoom: 13,
@@ -157,7 +170,8 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
       try {
         const collection = layerType === "lakes" ? "lakes" : "rivers";
         const response = await fetch(
-          `${window.location.origin}/bbox-server/collections/${collection}/items/${properties.subid}.json`
+          `${window.location.origin}/upstream-bbox-server/collections/${collection}/items/${properties.subid}.json`
+
         );
 
         if (!response.ok) {
@@ -191,6 +205,48 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
           .setLatLng(event.latlng)
           .setContent("<div style='color: red;'>Failed to fetch GeoJSON</div>")
           .openOn(mapRef.current);
+      }
+
+      // fetch and highlight downstream features
+      try {
+        const downstreamList = await fetchDownstreams(properties.subid);
+        // clear current downstream features (after fetching new ones, to avoid race conditions)
+        if (stateRef.current.downstreamFeatures.length > 0 && vectorTileLayerRef.current) {
+          for (const id of stateRef.current.downstreamFeatures) {
+            vectorTileLayerRef.current.resetFeatureStyle(id);
+          }
+        }
+        stateRef.current.downstreamFeatures = downstreamList.filter(uid => uid !== properties.uid);
+        for (const uid of stateRef.current.downstreamFeatures) {
+          if (uid != properties.uid) {
+            vectorTileLayer.setFeatureStyle(
+              uid, interactionStyles.highlight["downstream"]
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching downstream features:", error);
+      }
+
+      // fetch and highlight upstream features
+      try {
+        const upstreamList = await fetchUpstreams(properties.subid);
+        // clear current upstream features (after fetching new ones, to avoid race conditions)
+        if (stateRef.current.upstreamFeatures.length > 0 && vectorTileLayerRef.current) {
+          for (const id of stateRef.current.upstreamFeatures) {
+            vectorTileLayerRef.current.resetFeatureStyle(id);
+          }
+        }
+        stateRef.current.upstreamFeatures = upstreamList.filter(uid => uid !== properties.uid);
+        for (const uid of stateRef.current.upstreamFeatures) {
+          if (uid != properties.uid) {
+            vectorTileLayer.setFeatureStyle(
+              uid, interactionStyles.highlight["upstream"]
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching upstream features:", error);
       }
     };
 
