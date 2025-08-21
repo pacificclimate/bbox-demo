@@ -139,6 +139,7 @@ export default function FwaNameSearch({ onPickedFeature, fwaStyles }) {
   const underlayRendererRef = useRef(null);
   const abortRef = useRef(null);
   const activeKindRef = useRef(null);
+  const containerRef = useRef(null);
 
   useEffect(() => {
     loadIndex().then(setIndex).catch(console.error);
@@ -241,6 +242,17 @@ export default function FwaNameSearch({ onPickedFeature, fwaStyles }) {
     };
   }, [index]);
 
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setResults([]);
+        setOpenGroup(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const onToggleGroup = async (row) => {
     const nameKey = `${row.layer}:${row.name}`;
     if (openGroup === nameKey) {
@@ -307,7 +319,7 @@ export default function FwaNameSearch({ onPickedFeature, fwaStyles }) {
   };
 
   return (
-    <div className="fwa-search">
+    <div ref={containerRef} className="fwa-search">
       <div className="fwa-input-wrap">
         <input
           placeholder="Search river/lake name…"
@@ -319,7 +331,24 @@ export default function FwaNameSearch({ onPickedFeature, fwaStyles }) {
           aria-autocomplete="list"
           aria-expanded={!!results.length}
           aria-controls="fwa-results"
+          onFocus={() => {
+            if (q) search(q); // repopulate results when focusing back in
+          }}
         />
+        {q && (
+          <button
+            type="button"
+            className="fwa-clear-btn"
+            onClick={() => {
+              setQ("");
+              setResults([]);
+              clearUnderlay();
+            }}
+            aria-label="Clear search"
+          >
+            ×
+          </button>
+        )}
         {busy && <span className="fwa-spinner" aria-label="Loading" />}
 
         {!!results.length && (
@@ -338,7 +367,11 @@ export default function FwaNameSearch({ onPickedFeature, fwaStyles }) {
 
               return (
                 <li key={nameKey}>
-                  <div className="result-row" onClick={() => onQuickPickRow(r)}>
+                  <div
+                    className="result-row"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => onQuickPickRow(r)}
+                  >
                     <span className="result-name">{r.name}</span>
                     <small className="result-meta">
                       {hasMany ? `${r.keys.length} matches` : singleKeyLabel}
