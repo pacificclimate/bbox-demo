@@ -62,6 +62,7 @@
 
   /* prevent layout shift when scrollbar appears */
   scrollbar-gutter: stable both-edges;
+  overscroll-behavior: contain;
 }
 
 /* Top-level rows */

@@ -323,7 +323,12 @@ export default function FwaNameSearch({ onPickedFeature, fwaStyles }) {
         {busy && <span className="fwa-spinner" aria-label="Loading" />}
 
         {!!results.length && (
-          <ul id="fwa-results" className="results">
+          <ul
+            id="fwa-results"
+            className="results"
+            onWheelCapture={(e) => e.stopPropagation()}
+            onTouchMoveCapture={(e) => e.stopPropagation()}
+          >
             {results.map((r) => {
               const nameKey = `${r.layer}:${r.name}`;
               const metas = keyMeta[nameKey] || [];
