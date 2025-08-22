@@ -17,14 +17,21 @@
   padding: 8px 2px 8px 12px;
   border: 1px solid #ccc;
   border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   font-size: 14px;
   background: #fff;
+  &::placeholder {
+    color: #333;
+    opacity: 1;
+    font-weight: 600;
+  }
 }
 .fwa-input-wrap input:focus {
   border-color: #007bff;
   outline: none;
   box-shadow: 0 0 4px rgba(0,123,255,0.5);
 }
+
 
 .fwa-clear-btn {
   position: absolute;
@@ -81,7 +88,19 @@
   scrollbar-gutter: stable both-edges;
   overscroll-behavior: contain;
 }
-
+.fwa-input-wrap .results::-webkit-scrollbar {
+  width: 8px;
+}
+.fwa-input-wrap .results::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 12px;
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+.fwa-input-wrap .results::-webkit-scrollbar-thumb {
+  background-color: #90A4AE;
+  border-radius: 4px;
+}
 /* Top-level rows */
 .result-row {
   display: flex;

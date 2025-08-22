@@ -84,15 +84,11 @@ const fetchMeta = async (url, keys, keyField, fields, signal) => {
   if (!keys?.length) return [];
   const data = await fetchData(
     url,
-    buildParams(
-      `${keyField} IN (${numlist(keys)})`,
-      fields,
-      false,
-      keys.length
-    ),
+    buildParams(`${keyField} IN (${numlist(keys)})`, fields, false, PAGE),
     signal
   );
-  return (data.features || []).map((f) => f.attributes || {});
+  const rows = (data.features || []).map((f) => f.attributes || {});
+  return Array.from(new Map(rows.map((r) => [r[keyField], r])).values()); // dedupe per key
 };
 
 const fetchRiverMeta = (keys, signal) =>
@@ -322,7 +318,7 @@ export default function FwaNameSearch({ onPickedFeature, fwaStyles }) {
     <div ref={containerRef} className="fwa-search">
       <div className="fwa-input-wrap">
         <input
-          placeholder="Search river/lake name…"
+          placeholder="Search river or lake name…"
           value={q}
           onChange={(e) => {
             setQ(e.target.value);
