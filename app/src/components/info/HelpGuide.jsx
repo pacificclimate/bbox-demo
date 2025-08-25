@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { useMap } from "react-leaflet";
 import "./HelpGuide.css";
 
+const OGL_URL =
+  "https://www2.gov.bc.ca/gov/content/data/policy-standards/data-policies/open-data/open-government-licence-bc";
+
 const HelpGuide = () => {
   const [isOpen, setIsOpen] = useState(false);
   const map = useMap();
@@ -135,6 +138,20 @@ const HelpGuide = () => {
                     CNRM-CM5_r1i1p1, HadGEM2-ES_r1i1p1 and MPI-ESM-LR_r3i1p1
                   </li>
                 </ul>
+              </section>
+              <section>
+                <h3>Credits & licensing</h3>
+                <p>
+                  This application uses data and services from the BC Geographic
+                  Warehouse (DataBC).
+                </p>
+                <p>
+                  Contains information licensed under the{" "}
+                  <a href={OGL_URL} target="_blank" rel="noopener noreferrer">
+                    Open Government Licence – British Columbia
+                  </a>
+                  .
+                </p>
               </section>
             </div>
           </div>

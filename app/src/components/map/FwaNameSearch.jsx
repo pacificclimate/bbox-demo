@@ -127,6 +127,7 @@ export default function FwaNameSearch({ onPickedFeature, fwaStyles }) {
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
   const [results, setResults] = useState([]);
+  const [error, setError] = useState("");
   const [index, setIndex] = useState(null);
   const [openGroup, setOpenGroup] = useState(null);
   const [keyMeta, setKeyMeta] = useState({});
@@ -136,6 +137,18 @@ export default function FwaNameSearch({ onPickedFeature, fwaStyles }) {
   const abortRef = useRef(null);
   const activeKindRef = useRef(null);
   const containerRef = useRef(null);
+
+  const SERVER_ERR =
+    "The BC Geographic Warehouse Public webserver is unavailable right now. Please try again later.";
+  const isAbort = (e) => e?.name === "AbortError";
+  const handleServerError = (e) => {
+    console.error(e);
+    setError(SERVER_ERR);
+    setResults([]);
+    setQ("");
+    setOpenGroup(null);
+    clearUnderlay();
+  };
 
   useEffect(() => {
     loadIndex().then(setIndex).catch(console.error);
@@ -250,6 +263,7 @@ export default function FwaNameSearch({ onPickedFeature, fwaStyles }) {
   }, []);
 
   const onToggleGroup = async (row) => {
+    setError("");
     const nameKey = `${row.layer}:${row.name}`;
     if (openGroup === nameKey) {
       setOpenGroup(null);
@@ -268,7 +282,11 @@ export default function FwaNameSearch({ onPickedFeature, fwaStyles }) {
             : await fetchLakeMeta(row.keys, controller.signal);
         setKeyMeta((m) => ({ ...m, [nameKey]: meta }));
       } catch (e) {
-        if (e.name !== "AbortError") console.error(e);
+        if (isAbort(e)) {
+          console.error(e);
+          return;
+        }
+        handleServerError(e);
         setKeyMeta((m) => ({ ...m, [nameKey]: [] }));
       }
     }
@@ -276,6 +294,7 @@ export default function FwaNameSearch({ onPickedFeature, fwaStyles }) {
 
   const onPickKey = async (layerKind, key) => {
     setBusy(true);
+    setError("");
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -302,7 +321,11 @@ export default function FwaNameSearch({ onPickedFeature, fwaStyles }) {
       drawUnderlay(fc, style);
       onPickedFeature?.({ layer: layerKind, key, feature: fc });
     } catch (e) {
-      console.error(e);
+      if (isAbort(e)) {
+        console.error(e);
+        return;
+      }
+      handleServerError(e);
     } finally {
       setBusy(false);
     }
@@ -322,6 +345,7 @@ export default function FwaNameSearch({ onPickedFeature, fwaStyles }) {
           value={q}
           onChange={(e) => {
             setQ(e.target.value);
+            setError("");
             search(e.target.value);
           }}
           aria-autocomplete="list"
@@ -339,6 +363,7 @@ export default function FwaNameSearch({ onPickedFeature, fwaStyles }) {
               setQ("");
               setResults([]);
               clearUnderlay();
+              setError("");
             }}
             aria-label="Clear search"
           >
@@ -346,6 +371,11 @@ export default function FwaNameSearch({ onPickedFeature, fwaStyles }) {
           </button>
         )}
         {busy && <span className="fwa-spinner" aria-label="Loading" />}
+        {error && (
+          <div className="fwa-error" role="alert">
+            {error}
+          </div>
+        )}
 
         {!!results.length && (
           <ul

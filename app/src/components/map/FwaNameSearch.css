@@ -32,6 +32,18 @@
   box-shadow: 0 0 4px rgba(0,123,255,0.5);
 }
 
+.fwa-error {
+  position: absolute;
+  left: 0; right: 0;
+  top: calc(100% + 6px);
+  background: #fff3f3;
+  color: #b00020;
+  border: 1px solid #ffcdd2;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  z-index: 1001;
+}
 
 .fwa-clear-btn {
   position: absolute;
