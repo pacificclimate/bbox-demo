@@ -78,6 +78,7 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
 
   useEffect(() => {
     if (!mapRef.current) return;
+    // Ensure a dedicated pane for interactive vector tiles, above base layers and FWA highlighting but below controls
     if (!mapRef.current.getPane("interactive")) {
       mapRef.current.createPane("interactive");
       const p = mapRef.current.getPane("interactive");
@@ -95,7 +96,7 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
         updateWhenZooming: true,
         keepBuffer: 1,
         preferCanvas: true,
-        pane: "interactive",
+        pane: "interactive", // Use the dedicated pane
         zIndex: 1,
       }
     );

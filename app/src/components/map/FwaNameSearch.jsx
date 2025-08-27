@@ -113,7 +113,7 @@ const loadIndex = async () => {
   if (!resp.ok) throw new Error("Index load failed");
   return resp.json();
 };
-
+// Ensure a dedicated pane for the FWA highlight layer beneath the main interaction layer
 const ensureUnderlayPane = (map) => {
   if (!map.getPane("fwa-underlay")) {
     const pane = map.createPane("fwa-underlay");
