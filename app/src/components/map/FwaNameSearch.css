@@ -1,7 +1,7 @@
 .fwa-search {
   position: absolute;
-  top: 16px;
-  left: 46px;
+  top: 10px;
+  left: 52px;
   z-index: 1200;
   min-width: 320px;
 }
