@@ -1,12 +1,13 @@
 [webserver]
 loglevel = "Warn"
+
 [webserver.cors]
 allow_all_origins = true
 
 [[datasource]]
 name = "postgis_db"
 [datasource.postgis]
-url = "${DB_DSN}"
+url = "${BBOX_DB_DSN}"
 
 [[collection]]
 name = "lakes"
@@ -17,13 +18,14 @@ datasource = "postgis_db"
 sql = """
 SELECT 
     Uid, 
-    SubId, 
+    SubId,
+    DowSubId,
     ST_AsGeoJSON(ST_SetSRID(geom, 3005)) AS geojson 
 FROM lakes 
 """
 fid_field = "subid"
 geometry_field = "geojson"
-queryable_fields = ["Uid","SubId"]
+queryable_fields = ["Uid","SubId","DowSubId"]
 
 [[collection]]
 name = "rivers"
@@ -42,7 +44,7 @@ FROM rivers
 """
 fid_field = "subid"
 geometry_field = "geojson"
-queryable_fields = ["Uid","SubId"]
+queryable_fields = ["Uid","SubId","DowSubId"]
 
 [[collection]]
 name = "upstreams"
@@ -52,23 +54,29 @@ description = "Upstream Watershed Features"
 datasource = "postgis_db"
 sql = """
 WITH RECURSIVE drainage(subid, downsubid, uid, mouth) AS (
-  SELECT subid, dowsubid, uid, subid AS mouth
-  FROM rivers
+  WITH segments(subid, dowsubid, uid) AS (
+    SELECT subid, dowsubid, uid FROM lakes
+    UNION
+    SELECT subid, dowsubid, uid FROM rivers
+  )
 
-  UNION ALL
+    SELECT subid, dowsubid, uid, subid AS mouth
+    FROM segments
 
-  SELECT rivers.subid, rivers.dowsubid, rivers.uid, drainage.mouth
-  FROM drainage, rivers
-  WHERE drainage.subid = rivers.dowsubid)
+    UNION ALL
+
+    SELECT segments.subid, segments.dowsubid, segments.uid, drainage.mouth
+    FROM drainage, segments
+    WHERE drainage.subid = segments.dowsubid)
 
 SELECT mouth AS subid, 
   string_agg(text(subid), ', ') AS upstream_subids,
   string_agg(text(uid), ', ') AS upstream_uids, 
-  ST_Point(48, -123) AS geojson 
+  ST_AsGeoJSON(ST_SetSRID(ST_Point(52.628, -118.430, 4326), 3005)) AS origin 
 FROM drainage GROUP BY mouth
 """
 fid_field = "subid"
-geometry_field = "geojson"
+geometry_field = "origin"
 queryable_fields = ["SubId"]
 
 [[collection]]
@@ -79,23 +87,28 @@ description="Downstream Path Features"
 datasource="postgis_db"
 sql = """
 WITH RECURSIVE course(subid, downsubid, uid, origin) AS (
+  WITH segments(subid, dowsubid, uid) AS (
+    SELECT subid, dowsubid, uid FROM lakes
+    UNION
+    SELECT subid, dowsubid, uid FROM rivers
+  )
 
-  SELECT subid, dowsubid, uid, subid AS origin
-  FROM rivers
+    SELECT subid, dowsubid, uid, subid AS origin
+    FROM segments
 
-  UNION ALL
+    UNION ALL
 
-  SELECT rivers.subid, rivers.dowsubid,rivers.uid, course.origin
-  FROM course, rivers
-  WHERE course.downsubid = rivers.subid)
+    SELECT segments.subid, segments.dowsubid, segments.uid, course.origin
+    FROM course, segments
+    WHERE course.downsubid = segments.subid)
 SELECT origin AS subid,
   string_agg(text(subid), ', ') AS downstream_subids,
   string_agg(text(uid), ', ') AS downstream_uids,
-  ST_Point(48, -123) AS geojson
+  ST_AsGeoJSON(ST_SetSRID(ST_Point(49.1778, -123.241, 4326), 3005)) AS mouth
 FROM course GROUP BY origin
 """
 fid_field = "subid"
-geometry_field = "geojson"
+geometry_field = "mouth"
 queryable_fields = ["SubId"]
 
 [[grid]]
@@ -123,7 +136,7 @@ geometry_type = "LINESTRING"
 
 [[tileset.postgis.layer.query]]
 sql = """
-  SELECT  Uid, SubId, IsLake, DowSubId, ST_SetSRID(geom, 3005) AS geom
+  SELECT  Uid, SubId, DowSubId, ST_SetSRID(geom, 3005) AS geom
   FROM rivers
   WHERE geom && ST_MakeEnvelope($1, $2, $3, $4, 3005)
 """
@@ -139,5 +152,4 @@ sql = """
   FROM lakes
   WHERE geom && ST_MakeEnvelope($1, $2, $3, $4, 3005)
 """
-
 
