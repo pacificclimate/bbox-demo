@@ -26,6 +26,11 @@ Commands should be run from within the `app` folder.
 - Hover to dynamically highlight features.
 - Selecting a feature open the **Data Download Panel** and provides a link to download the GeoJSON for the feature.
 
+### BC Freshwater Atlas Lake & River Search
+
+- Search for rivers and lakes by name (supports partial matches).
+- Suggestions appear as you type; selecting one zooms the map to the feature and highlights it.
+
 ### Point Plotter:
 
 - Input coordinates (BC Albers, WGS 84, Web Mercator) to plot reference points.
@@ -40,24 +45,26 @@ Commands should be run from within the `app` folder.
 
 app/\
 ├── src/\
-| ├── assets/ PCIC Logo\
+│ ├── assets/ PCIC Logo\
 │ ├── components/\
-│ │ ├── data/ # # Data selection and download component
+│ │ ├── data/ # # Data selection and download component\
 │ │ ├── info/ # Help guide and logo components\
-│ │ └── map/ # Map-related components (InteractionLayer, PointPlotter, MapComponent)\
+│ │ └── map/ # Map-related components (FwaNameSearch, InteractionLayer, PointPlotter, MapComponent)\
 │ ├── services/ # API services and utilities\
 │ ├── styles.js # Map styling configurations\
 │ ├── App.jsx # Main application entry point\
 │ └── main.jsx # React DOM rendering\
 ├── public/ # Static assets (Leaflet PNG files)\
-├── vite.config.js # Vite configuration\
-├── config/\
-│ └── bbox.template.toml # Configuration for BBOX server\
-└── docker/\
-├── app/ # Dockerfile for the app\
-├── BBOX/ # Dockerfile and scripts for BBOX server\
-├── data-import/ # Dockerfile and scripts for data import\
-└── PostGIS/ # Dockerfile and script for PostGIS database\
+└── vite.config.js # Vite configuration\
+config\
+  ├── bbox.template.toml\
+  ├── BCAlbersCustomGrid.json\
+  └── BCAlbersGrid.json\
+docker\
+  ├── app/ # Dockerfile for the app\
+  ├── BBOX/ # Dockerfile and scripts for BBOX server\
+  ├── data-import/ # Dockerfile and scripts for data import\
+  └── PostGIS/ # Dockerfile and script for PostGIS database\
 
 - **Local server:** Runs on [http://localhost:3000](http://localhost:3000)
 - **Docker Container:** Runs on [http://localhost:3001](http://localhost:3001)
@@ -77,6 +84,12 @@ The app connects to the PCIC Hydromosaic API for:
 
 - Listing available climate models, emissions scenarios, and variables
 - Timeseries data downloads
+
+BC Geographic Warehouse (BCGW) [Public Map Server](https://delivery.maps.gov.bc.ca/arcgis/rest/services/mpcm/bcgwpub/MapServer):
+
+- Used for the Freshwater Atlas (FWA) lake and river search.
+- Water feature names are locally indexed for fast autocomplete.
+- On selection, the app queries the BCGW service for the feature’s geometry and attributes.
 
 ## Environment Variables
 
