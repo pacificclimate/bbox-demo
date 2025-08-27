@@ -10,8 +10,9 @@ const fetchStreamNetwork = async (subId, direction) => {
         throw new Error(`Failed to fetch ${direction}: ${response.statusText}`);
     }
     const json = await response.json();
-    const network = json.properties[`${direction.substring(0, direction.length - 1)}_uids`];
-    return network.split(", ").map(uid => parseInt(uid));
+    let network = json.properties[`${direction.substring(0, direction.length - 1)}_uids`];
+    network = network.split(", ").map(uid => parseInt(uid));
+    return network.filter(uid => uid != subId);
 };
 
 export const fetchUpstreams = async (subId) => {

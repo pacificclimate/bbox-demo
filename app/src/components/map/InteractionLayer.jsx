@@ -178,7 +178,6 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
         const collection = layerType === "lakes" ? "lakes" : "rivers";
         const response = await fetch(
           `${window.location.origin}/upstream-bbox-server/collections/${collection}/items/${properties.subid}.json`
-
         );
 
         if (!response.ok) {
@@ -214,46 +213,46 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
           .openOn(mapRef.current);
       }
 
-      // fetch and highlight downstream features
+      // timing on highlighting upstream and downstream features is a little
+      // tricky because the fetch is a little slow, giving things time to get out
+      // of sync. 
+      // If we clear all the existing upstream and downstream features
+      // before fetching the new ones, there are a few seconds during the fetch
+      // where a user can click a second time and cause two seperate upstream
+      // and downstream highlghts to appear, due to running the clear only before
+      // the fetch.
+      // On the other hand, if we fetch, clear, and display one set of features before
+      // fetching, clearing, and displaying the other set, the second clear may accidentally
+      // remove some of the just-fetched highlights.
+      // so both sets of features have to be fetched, then cleared, then displayed in tandem.
       try {
+        // fetch upstream and downstream features
         const downstreamList = await fetchDownstreams(properties.subid);
-        // clear current downstream features (after fetching new ones, to avoid race conditions)
+        const upstreamList = await fetchUpstreams(properties.subid);
+
+        // clear old highlighted upstream and downstream features
         if (stateRef.current.downstreamFeatures.length > 0 && vectorTileLayerRef.current) {
           for (const id of stateRef.current.downstreamFeatures) {
             vectorTileLayerRef.current.resetFeatureStyle(id);
           }
         }
-        stateRef.current.downstreamFeatures = downstreamList.filter(uid => uid !== properties.uid);
-        for (const uid of stateRef.current.downstreamFeatures) {
-          if (uid != properties.uid) {
-            vectorTileLayer.setFeatureStyle(
-              uid, interactionStyles.highlight["downstream"]
-            );
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching downstream features:", error);
-      }
-
-      // fetch and highlight upstream features
-      try {
-        const upstreamList = await fetchUpstreams(properties.subid);
-        // clear current upstream features (after fetching new ones, to avoid race conditions)
         if (stateRef.current.upstreamFeatures.length > 0 && vectorTileLayerRef.current) {
           for (const id of stateRef.current.upstreamFeatures) {
             vectorTileLayerRef.current.resetFeatureStyle(id);
           }
         }
-        stateRef.current.upstreamFeatures = upstreamList.filter(uid => uid !== properties.uid);
+
+        // highlight new upstream and downstream features
+        stateRef.current.downstreamFeatures = downstreamList;
+        for (const uid of stateRef.current.downstreamFeatures) {
+          vectorTileLayer.setFeatureStyle(uid, interactionStyles.highlight["downstream"]);
+        }
+        stateRef.current.upstreamFeatures = upstreamList;
         for (const uid of stateRef.current.upstreamFeatures) {
-          if (uid != properties.uid) {
-            vectorTileLayer.setFeatureStyle(
-              uid, interactionStyles.highlight["upstream"]
-            );
-          }
+          vectorTileLayer.setFeatureStyle(uid, interactionStyles.highlight["upstream"]);
         }
       } catch (error) {
-        console.error("Error fetching upstream features:", error);
+        console.error("Error fetching upstream and downstreamfeatures:", error);
       }
     };
 
