@@ -1,7 +1,7 @@
 .point-plotter {
     position: absolute;
-    bottom: 16px;
-    left: 16px;
+    bottom: 10px;
+    left: 10px;
     background-color: rgb(255, 255, 255, 0.7);
     padding: 16px;
     border-radius: 12px;

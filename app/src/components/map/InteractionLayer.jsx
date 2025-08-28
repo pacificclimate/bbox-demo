@@ -78,7 +78,13 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
 
   useEffect(() => {
     if (!mapRef.current) return;
-
+    // Ensure a dedicated pane for interactive vector tiles, above base layers and FWA highlighting but below controls
+    if (!mapRef.current.getPane("interactive")) {
+      mapRef.current.createPane("interactive");
+      const p = mapRef.current.getPane("interactive");
+      p.style.zIndex = 600;
+      p.style.pointerEvents = "auto";
+    }
     const vectorTileLayer = L.vectorGrid.protobuf(
       `${window.location.origin}/bbox-server/xyz/water_tiles/{z}/{x}/{y}.mvt`,
       {
@@ -90,6 +96,7 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
         updateWhenZooming: true,
         keepBuffer: 1,
         preferCanvas: true,
+        pane: "interactive", // Use the dedicated pane
         zIndex: 1,
       }
     );
