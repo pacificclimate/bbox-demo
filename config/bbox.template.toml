@@ -70,7 +70,6 @@ WITH RECURSIVE drainage(subid, downsubid, uid, mouth) AS (
     WHERE drainage.subid = segments.dowsubid)
 
 SELECT mouth AS subid, 
-  string_agg(text(subid), ', ') AS upstream_subids,
   string_agg(text(uid), ', ') AS upstream_uids, 
   ST_AsGeoJSON(ST_SetSRID(ST_Point(52.628, -118.430, 4326), 3005)) AS origin 
 FROM drainage GROUP BY mouth
@@ -102,7 +101,6 @@ WITH RECURSIVE course(subid, downsubid, uid, origin) AS (
     FROM course, segments
     WHERE course.downsubid = segments.subid)
 SELECT origin AS subid,
-  string_agg(text(subid), ', ') AS downstream_subids,
   string_agg(text(uid), ', ') AS downstream_uids,
   ST_AsGeoJSON(ST_SetSRID(ST_Point(49.1778, -123.241, 4326), 3005)) AS mouth
 FROM course GROUP BY origin
