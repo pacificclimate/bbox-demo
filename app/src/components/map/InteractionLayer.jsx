@@ -221,8 +221,8 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
       // Accordingly, both sets of features are cleared and highlighted in tandem.
       try {
         // fetch upstream and downstream features
-        const downstreamList = await fetchDownstreams(properties.subid);
-        const upstreamList = await fetchUpstreams(properties.subid);
+        const downstreamList = await fetchDownstreams(properties.subid, properties.uid);
+        const upstreamList = await fetchUpstreams(properties.subid, properties.uid);
 
         // clear old highlighted upstream and downstream features
         if (stateRef.current.downstreamFeatures.length > 0 && vectorTileLayerRef.current) {
