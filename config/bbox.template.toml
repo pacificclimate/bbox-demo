@@ -1,12 +1,13 @@
 [webserver]
 loglevel = "Warn"
+
 [webserver.cors]
 allow_all_origins = true
 
 [[datasource]]
 name = "postgis_db"
 [datasource.postgis]
-url = "${DB_DSN}"
+url = "${BBOX_DB_DSN}"
 
 [[collection]]
 name = "lakes"
@@ -17,13 +18,14 @@ datasource = "postgis_db"
 sql = """
 SELECT 
     Uid, 
-    SubId, 
+    SubId,
+    DowSubId,
     ST_AsGeoJSON(ST_SetSRID(geom, 3005)) AS geojson 
 FROM lakes 
 """
 fid_field = "subid"
 geometry_field = "geojson"
-queryable_fields = ["Uid","SubId"]
+queryable_fields = ["Uid","SubId","DowSubId"]
 
 [[collection]]
 name = "rivers"
@@ -42,7 +44,43 @@ FROM rivers
 """
 fid_field = "subid"
 geometry_field = "geojson"
-queryable_fields = ["Uid","SubId"]
+queryable_fields = ["Uid","SubId","DowSubId"]
+
+[[collection]]
+name = "upstreams"
+title = "Upstreams"
+description = "Upstream Watershed Features"
+[collection.postgis]
+datasource = "postgis_db"
+sql = """
+SELECT 
+    subid,
+    upstream_uids,
+    upstream_subids,
+    origin
+FROM upstreams
+"""
+fid_field = "subid"
+geometry_field = "origin"
+queryable_fields = ["SubId"]
+
+[[collection]]
+name="downstreams"
+title="Downstreams"
+description="Downstream Path Features"
+[collection.postgis]
+datasource="postgis_db"
+sql = """
+SELECT
+    subid,
+    downstream_uids,
+    downstream_subids,
+    mouth
+FROM downstreams
+"""
+fid_field = "subid"
+geometry_field = "mouth"
+queryable_fields = ["SubId"]
 
 [[grid]]
 json = "assets/BCAlbersCustomGrid.json"
@@ -69,7 +107,7 @@ geometry_type = "LINESTRING"
 
 [[tileset.postgis.layer.query]]
 sql = """
-  SELECT  Uid, SubId, IsLake, DowSubId, ST_SetSRID(geom, 3005) AS geom
+  SELECT  Uid, SubId, DowSubId, ST_SetSRID(geom, 3005) AS geom
   FROM rivers
   WHERE geom && ST_MakeEnvelope($1, $2, $3, $4, 3005)
 """
@@ -85,5 +123,4 @@ sql = """
   FROM lakes
   WHERE geom && ST_MakeEnvelope($1, $2, $3, $4, 3005)
 """
-
 
