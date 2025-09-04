@@ -214,17 +214,11 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
       }
 
       // timing on highlighting upstream and downstream features is a little
-      // tricky because the fetch is a little slow, giving things time to get out
-      // of sync. 
-      // If we clear all the existing upstream and downstream features
-      // before fetching the new ones, there are a few seconds during the fetch
-      // where a user can click a second time and cause two seperate upstream
-      // and downstream highlghts to appear, due to running the clear only before
-      // the fetch.
-      // On the other hand, if we fetch, clear, and display one set of features before
-      // fetching, clearing, and displaying the other set, the second clear may accidentally
-      // remove some of the just-fetched highlights.
-      // so both sets of features have to be fetched, then cleared, then displayed in tandem.
+      // tricky if the user selects a segment that is included in the 
+      // previously-displayed upstream highlights. In this case,
+      // clearing the "old" upstream highlights can accidentally clear some 
+      // of the "new" downstream highlights if they have already been highlighted. 
+      // Accordingly, both sets of features are cleared and highlighted in tandem.
       try {
         // fetch upstream and downstream features
         const downstreamList = await fetchDownstreams(properties.subid);
@@ -252,7 +246,7 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
           vectorTileLayer.setFeatureStyle(uid, interactionStyles.highlight["upstream"]);
         }
       } catch (error) {
-        console.error("Error fetching upstream and downstreamfeatures:", error);
+        console.error("Error fetching upstream and downstream features:", error);
       }
     };
 

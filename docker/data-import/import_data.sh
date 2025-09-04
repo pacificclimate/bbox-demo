@@ -58,9 +58,9 @@ EOSQL
 
 echo "Creating upstreams and downstreams tables..."
 psql "$DB_DSN" <<-EOSQL
-  DROP TABLE IF EXISTS upstreams;
+  DROP MATERIALIZED VIEW IF EXISTS upstreams;
 
-  CREATE TABLE upstreams AS
+  CREATE MATERIALIZED VIEW upstreams AS
   WITH RECURSIVE drainage(subid, downsubid, uid, mouth) AS (
     WITH segments(subid, dowsubid, uid) AS (
       SELECT subid, dowsubid, uid FROM lakes
@@ -83,9 +83,9 @@ psql "$DB_DSN" <<-EOSQL
     ST_AsGeoJSON(ST_SetSRID(ST_Point(52.628, -118.430, 4326), 3005)) AS origin 
   FROM drainage GROUP BY mouth;
 
-DROP TABLE IF EXISTS downstreams;
+DROP MATERIALIZED VIEW IF EXISTS downstreams;
 
-CREATE TABLE downstreams AS
+CREATE MATERIALIZED VIEW downstreams AS
   WITH RECURSIVE course(subid, downsubid, uid, origin) AS (
     WITH segments(subid, dowsubid, uid) AS (
       SELECT subid, dowsubid, uid FROM lakes

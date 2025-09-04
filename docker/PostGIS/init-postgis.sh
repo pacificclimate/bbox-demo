@@ -32,7 +32,4 @@ psql -v ON_ERROR_STOP=1 --username "postgres" <<-EOSQL
   -- Enable PostGIS extensions
   CREATE EXTENSION IF NOT EXISTS postgis;
   CREATE EXTENSION IF NOT EXISTS postgis_topology;
-
-  -- Log queries for debug purposes
-  ALTER SYSTEM SET log_statement = 'all';
 EOSQL
