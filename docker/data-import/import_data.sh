@@ -39,6 +39,19 @@ ogr2ogr \
   -append \
   -addfields
 
+echo "Importing Peace rivers"
+ogr2ogr \
+  -f "PostgreSQL" \
+  "PG:$DB_DSN" \
+  /data/Peace_3005_rivers.gpkg \
+  -nlt MULTILINESTRING \
+  -nln rivers \
+  -lco GEOMETRY_NAME=geom \
+  -lco FID=fid \
+  -a_srs EPSG:3005 \
+  -append \
+  -addfields
+
 echo "Rivers data imported. Importing lakes data..."
 echo "Importing Fraser lakes"
 ogr2ogr \
@@ -58,6 +71,19 @@ ogr2ogr \
   -f "PostgreSQL" \
   "PG:$DB_DSN" \
   /data/BC_Coast_3005_lakes.gpkg \
+  -nlt MULTIPOLYGON \
+  -nln lakes \
+  -lco GEOMETRY_NAME=geom \
+  -lco FID=fid \
+  -a_srs EPSG:3005 \
+  -append \
+  -addfields
+
+echo "Importing Peace lakes"
+ogr2ogr \
+  -f "PostgreSQL" \
+  "PG:$DB_DSN" \
+  /data/Peace_3005_lakes.gpkg \
   -nlt MULTIPOLYGON \
   -nln lakes \
   -lco GEOMETRY_NAME=geom \
