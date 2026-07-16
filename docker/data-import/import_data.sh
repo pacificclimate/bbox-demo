@@ -13,84 +13,44 @@ psql "$DB_DSN" <<-EOSQL
   DROP SEQUENCE IF EXISTS shared_uid_seq CASCADE;
 EOSQL
 
+import_dataset() {
+  file=$1
+  geometry_type=$2
+  table=$3
+  shift 3
+
+  ogr2ogr \
+    -f "PostgreSQL" \
+    "PG:$DB_DSN" \
+    "/data/$file" \
+    -nlt "$geometry_type" \
+    -nln "$table" \
+    -lco GEOMETRY_NAME=geom \
+    -lco FID=fid \
+    -a_srs EPSG:3005 \
+    "$@" \
+    -addfields
+}
+
 echo "PostGIS is ready. Importing rivers data..."
 echo "Importing Fraser rivers"
-ogr2ogr \
-  -f "PostgreSQL" \
-  "PG:$DB_DSN" \
-  /data/Fraser_3005_rivers.gpkg \
-  -nlt MULTILINESTRING \
-  -nln rivers \
-  -lco GEOMETRY_NAME=geom \
-  -lco FID=fid \
-  -a_srs EPSG:3005 \
-  -addfields
-  
+import_dataset Fraser_3005_rivers.gpkg MULTILINESTRING rivers
+
 echo "Importing BC Coast rivers"
-ogr2ogr \
-  -f "PostgreSQL" \
-  "PG:$DB_DSN" \
-  /data/BC_Coast_3005_rivers.gpkg \
-  -nlt MULTILINESTRING \
-  -nln rivers \
-  -lco GEOMETRY_NAME=geom \
-  -lco FID=fid \
-  -a_srs EPSG:3005 \
-  -append \
-  -addfields
+import_dataset BC_Coast_3005_rivers.gpkg MULTILINESTRING rivers -append
 
 echo "Importing Peace rivers"
-ogr2ogr \
-  -f "PostgreSQL" \
-  "PG:$DB_DSN" \
-  /data/Peace_3005_rivers.gpkg \
-  -nlt MULTILINESTRING \
-  -nln rivers \
-  -lco GEOMETRY_NAME=geom \
-  -lco FID=fid \
-  -a_srs EPSG:3005 \
-  -append \
-  -addfields
+import_dataset Peace_3005_rivers.gpkg MULTILINESTRING rivers -append
 
 echo "Rivers data imported. Importing lakes data..."
 echo "Importing Fraser lakes"
-ogr2ogr \
-  -f "PostgreSQL" \
-  "PG:$DB_DSN" \
-  /data/Fraser_3005_lakes.gpkg \
-  -nlt MULTIPOLYGON \
-  -nln lakes \
-  -lco GEOMETRY_NAME=geom \
-  -lco FID=fid \
-  -a_srs EPSG:3005 \
-  -addfields
-
+import_dataset Fraser_3005_lakes.gpkg MULTIPOLYGON lakes
 
 echo "Importing BC Coast lakes"
-ogr2ogr \
-  -f "PostgreSQL" \
-  "PG:$DB_DSN" \
-  /data/BC_Coast_3005_lakes.gpkg \
-  -nlt MULTIPOLYGON \
-  -nln lakes \
-  -lco GEOMETRY_NAME=geom \
-  -lco FID=fid \
-  -a_srs EPSG:3005 \
-  -append \
-  -addfields
+import_dataset BC_Coast_3005_lakes.gpkg MULTIPOLYGON lakes -append
 
 echo "Importing Peace lakes"
-ogr2ogr \
-  -f "PostgreSQL" \
-  "PG:$DB_DSN" \
-  /data/Peace_3005_lakes.gpkg \
-  -nlt MULTIPOLYGON \
-  -nln lakes \
-  -lco GEOMETRY_NAME=geom \
-  -lco FID=fid \
-  -a_srs EPSG:3005 \
-  -append \
-  -addfields
+import_dataset Peace_3005_lakes.gpkg MULTIPOLYGON lakes -append
 
 echo "Updating tables and adding indices..."
 psql "$DB_DSN" <<-EOSQL
