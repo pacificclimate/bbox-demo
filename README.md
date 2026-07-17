@@ -95,7 +95,10 @@ BC Geographic Warehouse (BCGW) [Public Map Server](https://delivery.maps.gov.bc.
 
 ## Environment Variables
 
-- `REACT_APP_BC_BASE_MAP_TILES_URL`: Base map tile URL (defaults to PCIC swarm server)
+- `REACT_APP_BC_BASE_MAP_TILES_URL`: Base map tile URL (defaults to the
+  production PNG tiles on `services.pacificclimate.org`). The app container
+  reads this variable when it starts, so non-production deployments can use a
+  different tile server and format without rebuilding the image.
 
 ## Docker Images
 

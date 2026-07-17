@@ -1,4 +1,4 @@
-import { BCBaseMap } from "pcic-react-leaflet-components";
+import { BCBaseMap } from "../../baseMapConfig.js";
 import { useRef, useEffect, lazy, Suspense } from "react";
 import InteractionLayer from "./InteractionLayer.jsx";
 import LogoBox from "../info/LogoBox.jsx";

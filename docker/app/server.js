@@ -5,6 +5,7 @@ const path = require("node:path");
 const PORT = Number(process.env.PORT || 8080);
 const DIST_DIR = path.join(__dirname, "dist");
 const BASE_PATH = "/chyp";
+const RUNTIME_CONFIG_PATH = "/runtime-config.js";
 
 const MIME_TYPES = {
   ".css": "text/css; charset=utf-8",
@@ -49,6 +50,21 @@ const normalizePath = (requestPath) => {
   return requestPath;
 };
 
+const sendRuntimeConfig = (res) => {
+  const tileUrl = (
+    process.env.REACT_APP_BC_BASE_MAP_TILES_URL || ""
+  ).trim();
+  const config = tileUrl
+    ? { REACT_APP_BC_BASE_MAP_TILES_URL: tileUrl }
+    : {};
+
+  res.writeHead(200, {
+    "Content-Type": "text/javascript; charset=utf-8",
+    "Cache-Control": "no-store",
+  });
+  res.end(`window.__CHYP_CONFIG__ = ${JSON.stringify(config)};\n`);
+};
+
 const sendFile = (res, filepath, requestPath) => {
   fs.readFile(filepath, (err, data) => {
     if (err) {
@@ -75,6 +91,12 @@ http
 
     const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
     const requestPath = normalizePath(decodeURIComponent(url.pathname));
+
+    if (requestPath === RUNTIME_CONFIG_PATH) {
+      sendRuntimeConfig(res);
+      return;
+    }
+
     const safePath = path.normalize(requestPath).replace(/^(\.\.[/\\])+/, "");
 
     let filepath = path.join(DIST_DIR, safePath);
