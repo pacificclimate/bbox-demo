@@ -361,6 +361,8 @@ export default function FwaNameSearch({ onPickedFeature, fwaStyles }) {
     <div ref={containerRef} className="fwa-search">
       <div className="fwa-input-wrap">
         <input
+          role="combobox"
+          aria-label="Search river or lake name"
           placeholder="Search river or lake name…"
           value={q}
           onChange={(e) => {

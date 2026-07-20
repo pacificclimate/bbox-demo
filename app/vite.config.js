@@ -13,6 +13,9 @@ export default defineConfig({
     }),
   ],
   base: "/chyp",
+  build: {
+    sourcemap: true,
+  },
   // Local Dev only
   server: {
     warmup: {

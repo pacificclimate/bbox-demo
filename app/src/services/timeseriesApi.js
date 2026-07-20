@@ -77,7 +77,7 @@ export const getAvailableOptions = async (outletId) => {
 export const getApiVariable = async (displayName) => {
   const variableInfo = await fetchVariableInfo();
   return Object.entries(variableInfo).find(
-    ([key, info]) => displayName === getDisplayName(info.name, info.units)
+    ([, info]) => displayName === getDisplayName(info.name, info.units)
   )?.[0];
 };
 

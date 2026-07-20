@@ -5,6 +5,10 @@ import L from "leaflet";
 import "leaflet.vectorgrid";
 import { fetchDownstreams, fetchUpstreams } from "../../services/streamNetApi.js";
 
+// leaflet.vectorgrid 1.3.0 calls the removed DomEvent.fakeStop method from its
+// Canvas click handler. Current upstream uses DomEvent.stop instead.
+L.DomEvent.fakeStop ??= L.DomEvent.stop;
+
 const DataSelectionTable = lazy(() => import("../data/DataSelectionTable.jsx"));
 
 const InteractionLayer = ({ baseStyles, interactionStyles }) => {
@@ -102,6 +106,7 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
     const vectorTileLayer = L.vectorGrid.protobuf(
       `${window.location.origin}/bbox-server/xyz/water_tiles/{z}/{x}/{y}.mvt`,
       {
+        rendererFactory: L.canvas.tile,
         vectorTileLayerStyles: baseStyles,
         maxNativeZoom: 13,
         interactive: true,
@@ -109,7 +114,6 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
         updateWhenIdle: true,
         updateWhenZooming: false,
         keepBuffer: 2,
-        preferCanvas: true,
         pane: "interactive", // Use the dedicated pane
         zIndex: 1,
       }

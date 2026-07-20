@@ -5,9 +5,7 @@ const runtimeTileUrl =
 
 export const baseMapTileUrl = runtimeTileUrl || BCBaseMap.tileset.url;
 
-BCBaseMap.tileset.url = baseMapTileUrl;
-
-const upsertResourceHint = ({ id, rel, href, as }) => {
+const upsertResourceHint = ({ id, rel, href, as, fetchPriority }) => {
   const link = document.getElementById(id) || document.createElement("link");
 
   link.id = id;
@@ -15,6 +13,9 @@ const upsertResourceHint = ({ id, rel, href, as }) => {
   link.href = href;
   if (as) {
     link.as = as;
+  }
+  if (fetchPriority) {
+    link.fetchPriority = fetchPriority;
   }
 
   if (!link.isConnected) {
@@ -41,6 +42,7 @@ export const configureBaseMapResourceHints = () => {
     id: "base-map-preload",
     rel: "preload",
     as: "image",
+    fetchPriority: "high",
     href: baseMapTileUrl
       .replace("{z}", "6")
       .replace("{x}", "33")

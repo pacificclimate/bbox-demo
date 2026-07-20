@@ -107,8 +107,8 @@ const HelpGuide = () => {
                     </ul>
                   </li>
                   <li>Enter X/Y or Longitude/Latitude coordinates</li>
-                  <li>Click "Plot Point" to add marker</li>
-                  <li>Use "Clear Marker" to remove point</li>
+                  <li>Click &quot;Plot Point&quot; to add marker</li>
+                  <li>Use &quot;Clear Marker&quot; to remove point</li>
                 </ul>
               </section>
 
@@ -129,7 +129,7 @@ const HelpGuide = () => {
                   <li>
                     Choose model, scenario, and variable from dropdown menus
                   </li>
-                  <li>Click "Download CSV" to get timeseries data</li>
+                  <li>Click &quot;Download CSV&quot; to get timeseries data</li>
                 </ol>
               </section>
 

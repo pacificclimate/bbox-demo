@@ -1,4 +1,4 @@
-import { BCBaseMap } from "../../baseMapConfig.js";
+import { BCBaseMap, baseMapTileUrl } from "../../baseMapConfig.js";
 import { useRef, useEffect, lazy, Suspense } from "react";
 import InteractionLayer from "./InteractionLayer.jsx";
 import LogoBox from "../info/LogoBox.jsx";
@@ -35,6 +35,7 @@ const MapComponent = () => {
 
   return (
     <BCBaseMap
+      baseMapTilesUrl={baseMapTileUrl}
       style={{
         height: "100vh",
         width: "100%",
