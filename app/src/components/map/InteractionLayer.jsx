@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 import L from "leaflet";
 import "leaflet.vectorgrid";
 import { fetchDownstreams, fetchUpstreams } from "../../services/streamNetApi.js";
+import { interactiveCanvasTile } from "./vectorGridCanvasRenderer.js";
 
 const DataSelectionTable = lazy(() => import("../data/DataSelectionTable.jsx"));
 
@@ -79,9 +80,12 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
       updateCursor("grab");
     },
     dragstart: () => {
+      stateRef.current.isDragging = true;
+      clearHoverHighlight();
       updateCursor("grabbing");
     },
     dragend: () => {
+      stateRef.current.isDragging = false;
       updateCursor("grab");
     },
   });
@@ -102,9 +106,12 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
     const vectorTileLayer = L.vectorGrid.protobuf(
       `${window.location.origin}/bbox-server/xyz/water_tiles/{z}/{x}/{y}.mvt`,
       {
+        rendererFactory: interactiveCanvasTile,
         vectorTileLayerStyles: baseStyles,
         maxNativeZoom: 13,
         interactive: true,
+        // Increase the Canvas hit area without making stream lines thicker.
+        tolerance: 5,
         getFeatureId: (feature) => feature.properties.uid,
         updateWhenIdle: true,
         updateWhenZooming: false,
@@ -254,21 +261,9 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
       }
     };
 
-    const handleMouseDown = () => {
-      stateRef.current.isDragging = true;
-      updateCursor("grabbing");
-    };
-
-    const handleMouseUp = () => {
-      stateRef.current.isDragging = false;
-      updateCursor(stateRef.current.hoverHighlight ? "pointer" : "grab");
-    };
-
     vectorTileLayer.on("mouseover", handleMouseOver);
     vectorTileLayer.on("mouseout", handleMouseOut);
     vectorTileLayer.on("click", handleClick);
-    vectorTileLayer.on("mousedown", handleMouseDown);
-    vectorTileLayer.on("mouseup", handleMouseUp);
 
     vectorTileLayer.addTo(mapRef.current);
 
