@@ -28,5 +28,15 @@ export default defineConfig({
     },
     port: 3000,
     host: true,
+    proxy: {
+      "/bbox-server": {
+        target: "https://beehive.pacificclimate.org",
+        changeOrigin: true,
+      },
+      "/hydromosaic": {
+        target: "https://beehive.pacificclimate.org",
+        changeOrigin: true,
+      },
+    },
   },
 });
