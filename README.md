@@ -80,6 +80,9 @@ A BBox instance running at the same host is assumed by InteractionLayer.jsx and 
 
 The project includes GitHub Actions workflows for Docker image publishing. Docker images for the app, data import, and BBOX server are automatically built and published upon branch pushes and tagged releases.
 
+Docker Swarm deployments must use the repository's explicit readiness gates;
+See [Swarm startup readiness](docs/swarm-readiness.md) for the required stack configuration and rollout procedure.
+
 ## API Integration
 
 The app connects to the PCIC Hydromosaic API for:
@@ -108,6 +111,7 @@ The following images are published to Docker Hub:
 - `pcic/chyp-data-import`: Data import utilities
 - `pcic/chyp-postgis`: PostGIS database
 - `pcic/chyp-server`: BBOX tile server
+- `pcic/chyp-varnish`: BBOX tile cache with an upstream readiness check
 
 ## Requirements
 

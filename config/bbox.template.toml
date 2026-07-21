@@ -82,6 +82,26 @@ fid_field = "subid"
 geometry_field = "mouth"
 queryable_fields = ["SubId"]
 
+[[collection]]
+name = "import_status"
+title = "CHYP import status"
+description = "Completed CHYP data imports"
+[collection.postgis]
+datasource = "postgis_db"
+sql = """
+SELECT
+    import_id,
+    status,
+    river_count,
+    lake_count,
+    ST_AsGeoJSON(ST_SetSRID(ST_Point(52.628, -118.430), 3005)) AS geojson
+FROM chyp_import_status
+WHERE status = 'ready'
+"""
+fid_field = "import_id"
+geometry_field = "geojson"
+queryable_fields = ["import_id", "status"]
+
 [[grid]]
 json = "assets/BCAlbersCustomGrid.json"
 
@@ -123,4 +143,3 @@ sql = """
   FROM lakes
   WHERE geom && ST_MakeEnvelope($1, $2, $3, $4, 3005)
 """
-

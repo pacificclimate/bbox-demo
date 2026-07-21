@@ -6,6 +6,13 @@ const zlib = require("node:zlib");
 const PORT = Number(process.env.PORT || 8080);
 const DIST_DIR = path.join(__dirname, "dist");
 const BASE_PATH = "/chyp";
+const STARTUP_RETRY_MS = Number(process.env.CHYP_STARTUP_RETRY_MS || 5000);
+const STARTUP_TIMEOUT_MS = Number(process.env.CHYP_STARTUP_TIMEOUT_MS || 5000);
+const STARTUP_URLS = (process.env.CHYP_STARTUP_URLS || "")
+  .split(",")
+  .map((value) => value.trim())
+  .filter(Boolean)
+  .map((value) => new URL(value).toString());
 const RUNTIME_CONFIG_PLACEHOLDER = "window.__CHYP_CONFIG__ = {};";
 const COMPRESSIBLE_EXTENSIONS = new Set([
   ".css",
@@ -122,6 +129,37 @@ const normalizePath = (requestPath) => {
   return requestPath;
 };
 
+const delay = (milliseconds) =>
+  new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+const waitForStartupUrl = async (url) => {
+  let lastError;
+
+  while (true) {
+    try {
+      const response = await fetch(url, {
+        signal: AbortSignal.timeout(STARTUP_TIMEOUT_MS),
+      });
+
+      if (response.ok) {
+        await response.body?.cancel();
+        console.log(`Startup dependency is ready: ${url}`);
+        return;
+      }
+
+      await response.body?.cancel();
+      throw new Error(`HTTP ${response.status}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (message !== lastError) {
+        console.log(`Waiting for startup dependency ${url}: ${message}`);
+        lastError = message;
+      }
+      await delay(STARTUP_RETRY_MS);
+    }
+  }
+};
+
 const getRuntimeConfigAssignment = () => {
   const tileUrl = (
     process.env.REACT_APP_BC_BASE_MAP_TILES_URL || ""
@@ -188,33 +226,56 @@ const sendFile = (req, res, filepath, requestPath) => {
   });
 };
 
-http
-  .createServer((req, res) => {
-    if (!req.url) {
-      res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
-      res.end("Bad Request");
+const server = http.createServer((req, res) => {
+  if (!req.url) {
+    res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("Bad Request");
+    return;
+  }
+
+  const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+  if (url.pathname === "/healthz") {
+    res.writeHead(200, {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-store",
+    });
+    res.end("ok");
+    return;
+  }
+
+  const requestPath = normalizePath(decodeURIComponent(url.pathname));
+
+  const safePath = path.normalize(requestPath).replace(/^(\.\.[/\\])+/, "");
+
+  let filepath = path.join(DIST_DIR, safePath);
+  if (requestPath === "/" || requestPath === "") {
+    filepath = path.join(DIST_DIR, "index.html");
+  }
+
+  fs.stat(filepath, (err, stat) => {
+    if (!err && stat.isFile()) {
+      sendFile(req, res, filepath, requestPath);
       return;
     }
 
-    const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
-    const requestPath = normalizePath(decodeURIComponent(url.pathname));
+    sendFile(req, res, path.join(DIST_DIR, "index.html"), "/");
+  });
+});
 
-    const safePath = path.normalize(requestPath).replace(/^(\.\.[/\\])+/, "");
+const startServer = async () => {
+  if (STARTUP_URLS.length) {
+    console.log(
+      `Waiting for ${STARTUP_URLS.length} startup dependency URL(s)...`
+    );
+    await Promise.all(STARTUP_URLS.map(waitForStartupUrl));
+  }
 
-    let filepath = path.join(DIST_DIR, safePath);
-    if (requestPath === "/" || requestPath === "") {
-      filepath = path.join(DIST_DIR, "index.html");
-    }
-
-    fs.stat(filepath, (err, stat) => {
-      if (!err && stat.isFile()) {
-        sendFile(req, res, filepath, requestPath);
-        return;
-      }
-
-      sendFile(req, res, path.join(DIST_DIR, "index.html"), "/");
-    });
-  })
-  .listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`Serving dist on port ${PORT}`);
   });
+};
+
+startServer().catch((error) => {
+  console.error("Unable to start the application server:", error);
+  process.exitCode = 1;
+});
