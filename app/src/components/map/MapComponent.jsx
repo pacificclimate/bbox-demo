@@ -62,7 +62,7 @@ const MapComponent = () => {
       maxBounds={maxBounds}
       maxBoundsViscosity={0}
       // Animation
-      fadeAnimation={false}
+      fadeAnimation={true}
       zoomAnimation={true}
       zoomAnimationThreshold={4}
       markerZoomAnimation={true}
