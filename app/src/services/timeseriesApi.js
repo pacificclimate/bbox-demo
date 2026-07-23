@@ -104,3 +104,44 @@ export const downloadTimeseries = async (outletId, selections) => {
   a.click();
   document.body.removeChild(a);
 };
+
+export const downloadBulkTimeseries = async (
+  outletId,
+  direction,
+  subids,
+  selections
+) => {
+  if (subids.length === 0) throw new Error(`No ${direction} outlets found`);
+
+  const apiVariable = await getApiVariable(selections.variable);
+  if (!apiVariable) throw new Error("No matching variable found");
+
+  const response = await fetch(`${BASE_URL}/bulk-downloads`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      subids,
+      model: selections.model,
+      scenario: selections.scenario,
+      variable: apiVariable,
+      format: "netcdf",
+    }),
+  });
+
+  if (!response.ok) {
+    const details = await response.text();
+    throw new Error(details || `Bulk download failed (${response.status})`);
+  }
+
+  const blob = await response.blob();
+  const filename = `${outletId}_${direction}_${selections.model}_${selections.scenario}_${apiVariable}.nc`
+    .replace(/[^A-Za-z0-9_.-]+/g, "_");
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+};

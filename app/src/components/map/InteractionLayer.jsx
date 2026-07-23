@@ -3,7 +3,10 @@ import { useState, useRef, useCallback, useEffect, memo, lazy, Suspense } from "
 import PropTypes from "prop-types";
 import L from "leaflet";
 import "leaflet.vectorgrid";
-import { fetchDownstreams, fetchUpstreams } from "../../services/streamNetApi.js";
+import {
+  fetchDownstreamNetwork,
+  fetchUpstreamNetwork,
+} from "../../services/streamNetApi.js";
 import { interactiveCanvasTile } from "./vectorGridCanvasRenderer.js";
 
 const DataSelectionTable = lazy(() => import("../data/DataSelectionTable.jsx"));
@@ -24,6 +27,10 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
 
   const [showDataTable, setShowDataTable] = useState(false);
   const [selectedSubId, setSelectedSubId] = useState(null);
+  const [networkSubids, setNetworkSubids] = useState({
+    upstream: null,
+    downstream: null,
+  });
 
   const updateCursor = (() => {
     let lastCursor = null;
@@ -162,6 +169,7 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
 
       const { uid, properties, layerType } = getFeatureInfo(event);
       setSelectedSubId(properties.subid);
+      setNetworkSubids({ upstream: null, downstream: null });
       setShowDataTable(true);
       // Reset previous clicked feature if exists
       if (stateRef.current.clickedFeature && vectorTileLayerRef.current) {
@@ -228,8 +236,13 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
       // Accordingly, both sets of features are cleared and highlighted in tandem.
       try {
         // fetch upstream and downstream features
-        const downstreamList = await fetchDownstreams(properties.subid, properties.uid);
-        const upstreamList = await fetchUpstreams(properties.subid, properties.uid);
+        const [downstreamNetwork, upstreamNetwork] = await Promise.all([
+          fetchDownstreamNetwork(properties.subid, properties.uid),
+          fetchUpstreamNetwork(properties.subid, properties.uid),
+        ]);
+
+        // A second feature may have been clicked while these requests ran.
+        if (stateRef.current.clickedFeature !== uid) return;
 
         // clear old highlighted upstream and downstream features
         if (stateRef.current.downstreamFeatures.length > 0 && vectorTileLayerRef.current) {
@@ -248,16 +261,23 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
         }
 
         // highlight new upstream and downstream features
-        stateRef.current.downstreamFeatures = downstreamList;
+        stateRef.current.downstreamFeatures = downstreamNetwork.uids;
         for (const uid of stateRef.current.downstreamFeatures) {
           vectorTileLayer.setFeatureStyle(uid, interactionStyles.highlight["downstream"]);
         }
-        stateRef.current.upstreamFeatures = upstreamList;
+        stateRef.current.upstreamFeatures = upstreamNetwork.uids;
         for (const uid of stateRef.current.upstreamFeatures) {
           vectorTileLayer.setFeatureStyle(uid, interactionStyles.highlight["upstream"]);
         }
+        setNetworkSubids({
+          upstream: upstreamNetwork.subids,
+          downstream: downstreamNetwork.subids,
+        });
       } catch (error) {
         console.error("Error fetching upstream and downstream features:", error);
+        if (stateRef.current.clickedFeature === uid) {
+          setNetworkSubids({ upstream: [], downstream: [] });
+        }
       }
     };
 
@@ -298,6 +318,8 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
         <Suspense fallback={null}>
           <DataSelectionTable
             featureId={selectedSubId}
+            upstreamSubids={networkSubids.upstream}
+            downstreamSubids={networkSubids.downstream}
             onClose={handleCloseDataTable}
           />
         </Suspense>

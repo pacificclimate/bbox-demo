@@ -44,6 +44,24 @@
   background-color: #0056b3;
 }
 
+.data-selection button:disabled {
+  background-color: #7b8a99;
+  cursor: not-allowed;
+}
+
+.data-selection .network-downloads {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid #bbb;
+}
+
+.data-selection .network-download-note {
+  color: #444;
+  text-align: center;
+}
+
 .data-selection .header {
   display: flex;
   justify-content: space-between;

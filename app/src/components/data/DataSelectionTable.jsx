@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
 import {
+  downloadBulkTimeseries,
   getAvailableOptions,
   downloadTimeseries,
 } from "../../services/timeseriesApi.js";
@@ -15,7 +16,12 @@ const getModelLabel = (model) =>
 const getScenarioLabel = (scenario) =>
   scenario === HISTORICAL_SCENARIO ? `${scenario} (PNWNAmet only)` : scenario;
 
-const DataSelectionTable = ({ featureId, onClose }) => {
+const DataSelectionTable = ({
+  featureId,
+  upstreamSubids,
+  downstreamSubids,
+  onClose,
+}) => {
   const outletId = `${featureId}`;
   const [options, setOptions] = useState({
     models: [],
@@ -28,7 +34,7 @@ const DataSelectionTable = ({ featureId, onClose }) => {
     variable: "",
   });
   const [isFetching, setIsFetching] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
+  const [activeDownload, setActiveDownload] = useState(null);
   const [showValidation, setShowValidation] = useState(false);
   const [shake, setShake] = useState(false);
 
@@ -75,16 +81,42 @@ const DataSelectionTable = ({ featureId, onClose }) => {
       return;
     }
 
-    setIsLoading(true);
+    setActiveDownload("selected");
     try {
       await downloadTimeseries(outletId, selections);
     } catch (error) {
       console.error("Download error:", error);
       alert("Failed to download data");
     } finally {
-      setIsLoading(false);
+      setActiveDownload(null);
     }
   }, [outletId, selections]);
+
+  const handleBulkDownload = useCallback(
+    async (direction) => {
+      if (Object.values(selections).some((v) => !v)) {
+        setShowValidation(true);
+        setShake(true);
+        setTimeout(() => setShake(false), 650);
+        return;
+      }
+
+      const subids =
+        direction === "upstream" ? upstreamSubids : downstreamSubids;
+      if (!subids?.length) return;
+
+      setActiveDownload(direction);
+      try {
+        await downloadBulkTimeseries(outletId, direction, subids, selections);
+      } catch (error) {
+        console.error("Bulk download error:", error);
+        alert(`Failed to download ${direction} data`);
+      } finally {
+        setActiveDownload(null);
+      }
+    },
+    [downstreamSubids, outletId, selections, upstreamSubids]
+  );
 
   return (
     <div className={`data-selection ${shake ? "shake" : ""}`}>
@@ -152,9 +184,43 @@ const DataSelectionTable = ({ featureId, onClose }) => {
           ))}
         </select>
 
-        <button type="button" onClick={handleDownload} disabled={isLoading}>
-          {isLoading ? "Downloading..." : "Download CSV"}
+        <button
+          type="button"
+          onClick={handleDownload}
+          disabled={activeDownload !== null}
+        >
+          {activeDownload === "selected"
+            ? "Downloading..."
+            : "Download selected CSV"}
         </button>
+
+        <div className="network-downloads">
+          <button
+            type="button"
+            onClick={() => handleBulkDownload("upstream")}
+            disabled={activeDownload !== null || !upstreamSubids?.length}
+          >
+            {activeDownload === "upstream"
+              ? "Downloading upstream..."
+              : upstreamSubids === null
+                ? "Loading upstream network..."
+                : `Download upstream NetCDF (${upstreamSubids.length})`}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleBulkDownload("downstream")}
+            disabled={activeDownload !== null || !downstreamSubids?.length}
+          >
+            {activeDownload === "downstream"
+              ? "Downloading downstream..."
+              : downstreamSubids === null
+                ? "Loading downstream network..."
+                : `Download downstream NetCDF (${downstreamSubids.length})`}
+          </button>
+        </div>
+        <small className="network-download-note">
+          Network downloads include the selected segment.
+        </small>
       </form>
     </div>
   );
@@ -162,6 +228,8 @@ const DataSelectionTable = ({ featureId, onClose }) => {
 
 DataSelectionTable.propTypes = {
   featureId: PropTypes.string.isRequired,
+  upstreamSubids: PropTypes.arrayOf(PropTypes.string),
+  downstreamSubids: PropTypes.arrayOf(PropTypes.string),
   onClose: PropTypes.func.isRequired,
 };
 
