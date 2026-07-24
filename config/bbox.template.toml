@@ -25,7 +25,7 @@ FROM lakes
 """
 fid_field = "subid"
 geometry_field = "geojson"
-queryable_fields = ["Uid","SubId","DowSubId"]
+queryable_fields = ["uid","subid","dowsubid"]
 
 [[collection]]
 name = "rivers"
@@ -44,7 +44,7 @@ FROM rivers
 """
 fid_field = "subid"
 geometry_field = "geojson"
-queryable_fields = ["Uid","SubId","DowSubId"]
+queryable_fields = ["uid","subid","dowsubid"]
 
 [[collection]]
 name = "upstreams"
@@ -62,7 +62,7 @@ FROM upstreams
 """
 fid_field = "subid"
 geometry_field = "origin"
-queryable_fields = ["SubId"]
+queryable_fields = ["subid"]
 
 [[collection]]
 name="downstreams"
@@ -80,7 +80,105 @@ FROM downstreams
 """
 fid_field = "subid"
 geometry_field = "mouth"
-queryable_fields = ["SubId"]
+queryable_fields = ["subid"]
+
+[[collection]]
+name = "upstream_feature_collections"
+title = "Upstream Network FeatureCollections"
+description = "Downloadable river and lake FeatureCollections for upstream networks"
+[collection.postgis]
+datasource = "postgis_db"
+sql = """
+SELECT
+    network.subid,
+    network.origin,
+    (
+        SELECT jsonb_build_object(
+            'type', 'FeatureCollection',
+            'features', COALESCE(
+                jsonb_agg(
+                    jsonb_build_object(
+                        'type', 'Feature',
+                        'id', water.subid::text,
+                        'geometry', ST_AsGeoJSON(ST_SetSRID(water.geom, 3005))::jsonb,
+                        'properties', jsonb_build_object(
+                            'subid', water.subid,
+                            'uid', water.uid,
+                            'dowsubid', water.dowsubid,
+                            'islake', water.islake,
+                            'source', water.source
+                        )
+                    ) ORDER BY member.position
+                ),
+                '[]'::jsonb
+            )
+        )
+        FROM unnest(network.upstream_subids)
+            WITH ORDINALITY AS member(subid, position)
+        JOIN LATERAL (
+            SELECT subid, uid, dowsubid, islake, 'river' AS source, geom
+            FROM rivers
+            WHERE subid = member.subid
+            UNION ALL
+            SELECT subid, uid, dowsubid, islake, 'lake' AS source, geom
+            FROM lakes
+            WHERE subid = member.subid
+        ) water ON TRUE
+    ) AS feature_collection
+FROM upstreams network
+"""
+fid_field = "subid"
+geometry_field = "origin"
+queryable_fields = ["subid"]
+
+[[collection]]
+name = "downstream_feature_collections"
+title = "Downstream Network FeatureCollections"
+description = "Downloadable river and lake FeatureCollections for downstream networks"
+[collection.postgis]
+datasource = "postgis_db"
+sql = """
+SELECT
+    network.subid,
+    network.mouth,
+    (
+        SELECT jsonb_build_object(
+            'type', 'FeatureCollection',
+            'features', COALESCE(
+                jsonb_agg(
+                    jsonb_build_object(
+                        'type', 'Feature',
+                        'id', water.subid::text,
+                        'geometry', ST_AsGeoJSON(ST_SetSRID(water.geom, 3005))::jsonb,
+                        'properties', jsonb_build_object(
+                            'subid', water.subid,
+                            'uid', water.uid,
+                            'dowsubid', water.dowsubid,
+                            'islake', water.islake,
+                            'source', water.source
+                        )
+                    ) ORDER BY member.position
+                ),
+                '[]'::jsonb
+            )
+        )
+        FROM unnest(network.downstream_subids)
+            WITH ORDINALITY AS member(subid, position)
+        JOIN LATERAL (
+            SELECT subid, uid, dowsubid, islake, 'river' AS source, geom
+            FROM rivers
+            WHERE subid = member.subid
+            UNION ALL
+            SELECT subid, uid, dowsubid, islake, 'lake' AS source, geom
+            FROM lakes
+            WHERE subid = member.subid
+        ) water ON TRUE
+    ) AS feature_collection
+FROM downstreams network
+"""
+fid_field = "subid"
+geometry_field = "mouth"
+queryable_fields = ["subid"]
 
 [[collection]]
 name = "import_status"

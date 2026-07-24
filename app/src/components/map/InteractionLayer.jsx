@@ -7,9 +7,70 @@ import {
   fetchDownstreamNetwork,
   fetchUpstreamNetwork,
 } from "../../services/streamNetApi.js";
+import { downloadNetworkGeoJson } from "../../services/geoJsonApi.js";
 import { interactiveCanvasTile } from "./vectorGridCanvasRenderer.js";
 
 const DataSelectionTable = lazy(() => import("../data/DataSelectionTable.jsx"));
+
+const makePopupLink = (label) => {
+  const link = document.createElement("a");
+  link.href = "#";
+  link.textContent = label;
+  link.style.display = "block";
+  link.style.color = "blue";
+  link.style.textDecoration = "underline";
+  link.style.marginTop = "4px";
+  return link;
+};
+
+const setPopupLinkUnavailable = (link, label) => {
+  link.textContent = label;
+  link.setAttribute("aria-disabled", "true");
+  link.style.color = "#666";
+  link.style.pointerEvents = "none";
+};
+
+const enableNetworkGeoJsonLink = ({
+  link,
+  selectedSubid,
+  direction,
+  subids,
+  controllers,
+}) => {
+  link.textContent = `Download ${direction} GeoJSON (${subids.length})`;
+  link.removeAttribute("aria-disabled");
+  link.style.color = "blue";
+  link.style.pointerEvents = "auto";
+
+  link.addEventListener("click", async (event) => {
+    event.preventDefault();
+    if (link.dataset.downloading === "true") return;
+
+    link.dataset.downloading = "true";
+    link.textContent = `Preparing ${direction} GeoJSON...`;
+    link.style.pointerEvents = "none";
+    const controller = new AbortController();
+    controllers.add(controller);
+
+    try {
+      await downloadNetworkGeoJson({
+        selectedSubid,
+        direction,
+        signal: controller.signal,
+      });
+      link.textContent = `Download ${direction} GeoJSON (${subids.length})`;
+    } catch (error) {
+      if (error.name !== "AbortError") {
+        console.error(`Failed to download ${direction} GeoJSON:`, error);
+        link.textContent = `Failed — retry ${direction} GeoJSON`;
+      }
+    } finally {
+      controllers.delete(controller);
+      delete link.dataset.downloading;
+      link.style.pointerEvents = "auto";
+    }
+  });
+};
 
 const InteractionLayer = ({ baseStyles, interactionStyles }) => {
   const stateRef = useRef({
@@ -189,6 +250,8 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
         mapRef.current.closePopup(stateRef.current.currentPopup);
       }
 
+      let networkGeoJsonLinks = null;
+      const geoJsonDownloadControllers = new Set();
       try {
         const collection = layerType === "lakes" ? "lakes" : "rivers";
         const response = await fetch(
@@ -205,20 +268,44 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
         });
         const url = URL.createObjectURL(blob);
 
+        const popupContent = document.createElement("div");
+        popupContent.style.maxWidth = "280px";
+        popupContent.style.wordWrap = "break-word";
+
+        const subidLabel = document.createElement("strong");
+        subidLabel.textContent = "SubId:";
+        popupContent.append(subidLabel, ` ${properties.subid}`);
+
+        const selectedLink = makePopupLink("Download selected GeoJSON");
+        selectedLink.href = url;
+        selectedLink.download = `${properties.subid}.geojson`;
+        popupContent.appendChild(selectedLink);
+
+        const upstreamLink = makePopupLink("Loading upstream network...");
+        const downstreamLink = makePopupLink("Loading downstream network...");
+        setPopupLinkUnavailable(upstreamLink, "Loading upstream network...");
+        setPopupLinkUnavailable(downstreamLink, "Loading downstream network...");
+        popupContent.append(upstreamLink, downstreamLink);
+        networkGeoJsonLinks = {
+          upstream: upstreamLink,
+          downstream: downstreamLink,
+        };
+
         popup.current
           .setLatLng(event.latlng)
-          .setContent(
-            `
-            <div style="max-width: 250px; word-wrap: break-word;">
-              <strong>SubId:</strong> ${properties.subid} <br />
-              <a href="${url}" download="${properties.subid}.geojson" style="color: blue; text-decoration: underline;">Download GeoJSON</a>
-            </div>
-          `
-          )
+          .setContent(popupContent)
           .openOn(mapRef.current);
+        stateRef.current.currentPopup = popup.current;
 
-        popup.current.on("remove", () => {
+        popup.current.once("remove", () => {
           URL.revokeObjectURL(url);
+          for (const controller of geoJsonDownloadControllers) {
+            controller.abort();
+          }
+          geoJsonDownloadControllers.clear();
+          if (stateRef.current.currentPopup === popup.current) {
+            stateRef.current.currentPopup = null;
+          }
         });
       } catch (error) {
         console.error("Error fetching GeoJSON:", error);
@@ -273,10 +360,36 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
           upstream: upstreamNetwork.subids,
           downstream: downstreamNetwork.subids,
         });
+        if (networkGeoJsonLinks) {
+          enableNetworkGeoJsonLink({
+            link: networkGeoJsonLinks.upstream,
+            selectedSubid: properties.subid,
+            direction: "upstream",
+            subids: upstreamNetwork.subids,
+            controllers: geoJsonDownloadControllers,
+          });
+          enableNetworkGeoJsonLink({
+            link: networkGeoJsonLinks.downstream,
+            selectedSubid: properties.subid,
+            direction: "downstream",
+            subids: downstreamNetwork.subids,
+            controllers: geoJsonDownloadControllers,
+          });
+        }
       } catch (error) {
         console.error("Error fetching upstream and downstream features:", error);
         if (stateRef.current.clickedFeature === uid) {
           setNetworkSubids({ upstream: [], downstream: [] });
+          if (networkGeoJsonLinks) {
+            setPopupLinkUnavailable(
+              networkGeoJsonLinks.upstream,
+              "Upstream GeoJSON unavailable"
+            );
+            setPopupLinkUnavailable(
+              networkGeoJsonLinks.downstream,
+              "Downstream GeoJSON unavailable"
+            );
+          }
         }
       }
     };

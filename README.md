@@ -24,7 +24,7 @@ Commands should be run from within the `app` folder.
 - Vector tiles used to display over 100k lakes and river segments across British Columbia
 - Lakes and rivers shown in blue, highlighted in red when selected.
 - Hover to dynamically highlight features.
-- Selecting a feature open the **Data Download Panel** and provides a link to download the GeoJSON for the feature.
+- Selecting a feature opens the **Data Download Panel** and provides links to download GeoJSON for the selected feature or its complete upstream/downstream network.
 
 ### BC Freshwater Atlas Lake & River Search
 
