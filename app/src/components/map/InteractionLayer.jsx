@@ -9,6 +9,7 @@ import {
 } from "../../services/streamNetApi.js";
 import { downloadNetworkGeoJson } from "../../services/geoJsonApi.js";
 import { interactiveCanvasTile } from "./vectorGridCanvasRenderer.js";
+import "./InteractionLayer.css";
 
 const DataSelectionTable = lazy(() => import("../data/DataSelectionTable.jsx"));
 
@@ -37,7 +38,7 @@ const enableNetworkGeoJsonLink = ({
   subids,
   controllers,
 }) => {
-  link.textContent = `Download ${direction} GeoJSON (${subids.length})`;
+  link.textContent = `${direction[0].toUpperCase()}${direction.slice(1)} GeoJSON (${subids.length})`;
   link.removeAttribute("aria-disabled");
   link.style.color = "blue";
   link.style.pointerEvents = "auto";
@@ -58,7 +59,7 @@ const enableNetworkGeoJsonLink = ({
         direction,
         signal: controller.signal,
       });
-      link.textContent = `Download ${direction} GeoJSON (${subids.length})`;
+      link.textContent = `${direction[0].toUpperCase()}${direction.slice(1)} GeoJSON (${subids.length})`;
     } catch (error) {
       if (error.name !== "AbortError") {
         console.error(`Failed to download ${direction} GeoJSON:`, error);
@@ -84,7 +85,14 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
   });
   const vectorTileLayerRef = useRef(null);
   const mapRef = useRef(null);
-  const popup = useRef(L.popup({ className: "custom-popup", autoPan: false }));
+  const popup = useRef(
+    L.popup({
+      className: "custom-popup",
+      autoPan: false,
+      minWidth: 160,
+      maxWidth: 230,
+    })
+  );
 
   const [showDataTable, setShowDataTable] = useState(false);
   const [selectedSubId, setSelectedSubId] = useState(null);
@@ -269,14 +277,21 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
         const url = URL.createObjectURL(blob);
 
         const popupContent = document.createElement("div");
-        popupContent.style.maxWidth = "280px";
-        popupContent.style.wordWrap = "break-word";
+        popupContent.className = "geojson-download-popup";
 
-        const subidLabel = document.createElement("strong");
+        const heading = document.createElement("strong");
+        heading.className = "geojson-download-popup__heading";
+        heading.textContent = "Download GeoJSON";
+        popupContent.appendChild(heading);
+
+        const subidLine = document.createElement("div");
+        subidLine.className = "geojson-download-popup__subid";
+        const subidLabel = document.createElement("span");
         subidLabel.textContent = "SubId:";
-        popupContent.append(subidLabel, ` ${properties.subid}`);
+        subidLine.append(subidLabel, ` ${properties.subid}`);
+        popupContent.appendChild(subidLine);
 
-        const selectedLink = makePopupLink("Download selected GeoJSON");
+        const selectedLink = makePopupLink("Selected GeoJSON");
         selectedLink.href = url;
         selectedLink.download = `${properties.subid}.geojson`;
         popupContent.appendChild(selectedLink);

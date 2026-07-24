@@ -16,6 +16,16 @@ const getModelLabel = (model) =>
 const getScenarioLabel = (scenario) =>
   scenario === HISTORICAL_SCENARIO ? `${scenario} (PNWNAmet only)` : scenario;
 
+const getVariableLabel = (variable) =>
+  variable.startsWith(
+    "mass concentration of maximum amount of oxygen that will dissolve"
+  )
+    ? variable.replace(
+        /^mass concentration of maximum amount of oxygen that will dissolve in water at given temperature and pressure/,
+        "Dissolved oxygen saturation"
+      )
+    : variable;
+
 const DataSelectionTable = ({
   featureId,
   upstreamSubids,
@@ -179,7 +189,7 @@ const DataSelectionTable = ({
           </option>
           {options.variables.map((variable) => (
             <option key={variable} value={variable}>
-              {variable}
+              {getVariableLabel(variable)}
             </option>
           ))}
         </select>
