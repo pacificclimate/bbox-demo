@@ -84,101 +84,73 @@ queryable_fields = ["subid"]
 
 [[collection]]
 name = "upstream_feature_collections"
-title = "Upstream Network FeatureCollections"
-description = "Downloadable river and lake FeatureCollections for upstream networks"
+title = "Upstream Network Features"
+description = "Paginated river and lake features belonging to upstream networks"
 [collection.postgis]
 datasource = "postgis_db"
 sql = """
 SELECT
-    network.subid,
-    network.origin,
-    (
-        SELECT jsonb_build_object(
-            'type', 'FeatureCollection',
-            'features', COALESCE(
-                jsonb_agg(
-                    jsonb_build_object(
-                        'type', 'Feature',
-                        'id', water.subid::text,
-                        'geometry', ST_AsGeoJSON(ST_SetSRID(water.geom, 3005))::jsonb,
-                        'properties', jsonb_build_object(
-                            'subid', water.subid,
-                            'uid', water.uid,
-                            'dowsubid', water.dowsubid,
-                            'islake', water.islake,
-                            'source', water.source
-                        )
-                    ) ORDER BY member.position
-                ),
-                '[]'::jsonb
-            )
-        )
-        FROM unnest(network.upstream_subids)
-            WITH ORDINALITY AS member(subid, position)
-        JOIN LATERAL (
-            SELECT subid, uid, dowsubid, islake, 'river' AS source, geom
-            FROM rivers
-            WHERE subid = member.subid
-            UNION ALL
-            SELECT subid, uid, dowsubid, islake, 'lake' AS source, geom
-            FROM lakes
-            WHERE subid = member.subid
-        ) water ON TRUE
-    ) AS feature_collection
+    concat(network.subid, ':', member.position, ':', water.source) AS network_member_id,
+    network.subid AS network_subid,
+    member.position AS network_position,
+    water.subid,
+    water.uid,
+    water.dowsubid,
+    water.islake,
+    water.source,
+    ST_SetSRID(water.geom, 3005) AS geom
 FROM upstreams network
+CROSS JOIN LATERAL unnest(network.upstream_subids)
+    WITH ORDINALITY AS member(subid, position)
+JOIN LATERAL (
+    SELECT subid, uid, dowsubid, islake, 'river' AS source, geom
+    FROM rivers
+    WHERE subid = member.subid
+    UNION ALL
+    SELECT subid, uid, dowsubid, islake, 'lake' AS source, geom
+    FROM lakes
+    WHERE subid = member.subid
+) water ON TRUE
+ORDER BY network.subid, member.position, water.source
 """
-fid_field = "subid"
-geometry_field = "origin"
-queryable_fields = ["subid"]
+fid_field = "network_member_id"
+geometry_field = "geom"
+queryable_fields = ["network_subid"]
 
 [[collection]]
 name = "downstream_feature_collections"
-title = "Downstream Network FeatureCollections"
-description = "Downloadable river and lake FeatureCollections for downstream networks"
+title = "Downstream Network Features"
+description = "Paginated river and lake features belonging to downstream networks"
 [collection.postgis]
 datasource = "postgis_db"
 sql = """
 SELECT
-    network.subid,
-    network.mouth,
-    (
-        SELECT jsonb_build_object(
-            'type', 'FeatureCollection',
-            'features', COALESCE(
-                jsonb_agg(
-                    jsonb_build_object(
-                        'type', 'Feature',
-                        'id', water.subid::text,
-                        'geometry', ST_AsGeoJSON(ST_SetSRID(water.geom, 3005))::jsonb,
-                        'properties', jsonb_build_object(
-                            'subid', water.subid,
-                            'uid', water.uid,
-                            'dowsubid', water.dowsubid,
-                            'islake', water.islake,
-                            'source', water.source
-                        )
-                    ) ORDER BY member.position
-                ),
-                '[]'::jsonb
-            )
-        )
-        FROM unnest(network.downstream_subids)
-            WITH ORDINALITY AS member(subid, position)
-        JOIN LATERAL (
-            SELECT subid, uid, dowsubid, islake, 'river' AS source, geom
-            FROM rivers
-            WHERE subid = member.subid
-            UNION ALL
-            SELECT subid, uid, dowsubid, islake, 'lake' AS source, geom
-            FROM lakes
-            WHERE subid = member.subid
-        ) water ON TRUE
-    ) AS feature_collection
+    concat(network.subid, ':', member.position, ':', water.source) AS network_member_id,
+    network.subid AS network_subid,
+    member.position AS network_position,
+    water.subid,
+    water.uid,
+    water.dowsubid,
+    water.islake,
+    water.source,
+    ST_SetSRID(water.geom, 3005) AS geom
 FROM downstreams network
+CROSS JOIN LATERAL unnest(network.downstream_subids)
+    WITH ORDINALITY AS member(subid, position)
+JOIN LATERAL (
+    SELECT subid, uid, dowsubid, islake, 'river' AS source, geom
+    FROM rivers
+    WHERE subid = member.subid
+    UNION ALL
+    SELECT subid, uid, dowsubid, islake, 'lake' AS source, geom
+    FROM lakes
+    WHERE subid = member.subid
+) water ON TRUE
+ORDER BY network.subid, member.position, water.source
 """
-fid_field = "subid"
-geometry_field = "mouth"
-queryable_fields = ["subid"]
+fid_field = "network_member_id"
+geometry_field = "geom"
+queryable_fields = ["network_subid"]
 
 [[collection]]
 name = "import_status"

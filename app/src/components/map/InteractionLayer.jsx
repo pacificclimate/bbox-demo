@@ -63,7 +63,7 @@ const enableNetworkGeoJsonLink = ({
     } catch (error) {
       if (error.name !== "AbortError") {
         console.error(`Failed to download ${direction} GeoJSON:`, error);
-        link.textContent = `Failed — retry ${direction} GeoJSON`;
+        link.textContent = `Failed. Retry ${direction} GeoJSON`;
       }
     } finally {
       controllers.delete(controller);
