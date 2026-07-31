@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
 import {
-  downloadBulkTimeseries,
+  fetchBulkTimeseries,
   getAvailableOptions,
-  downloadTimeseries,
+  getTimeseriesDownload,
 } from "../../services/timeseriesApi.js";
+import { downloadBlob, downloadUrl } from "../../utils/downloadFile.js";
 import "./DataSelection.css";
 
 const HISTORICAL_SCENARIO = "historical";
@@ -93,7 +94,11 @@ const DataSelectionTable = ({
 
     setActiveDownload("selected");
     try {
-      await downloadTimeseries(outletId, selections);
+      const { url, filename } = await getTimeseriesDownload(
+        outletId,
+        selections
+      );
+      downloadUrl(url, filename);
     } catch (error) {
       console.error("Download error:", error);
       alert("Failed to download data");
@@ -113,11 +118,17 @@ const DataSelectionTable = ({
 
       const subids =
         direction === "upstream" ? upstreamSubids : downstreamSubids;
-      if (!subids?.length) return;
+      if (!subids || subids.length <= 1) return;
 
       setActiveDownload(direction);
       try {
-        await downloadBulkTimeseries(outletId, direction, subids, selections);
+        const { blob, filename } = await fetchBulkTimeseries(
+          outletId,
+          direction,
+          subids,
+          selections
+        );
+        downloadBlob(blob, filename);
       } catch (error) {
         console.error("Bulk download error:", error);
         alert(`Failed to download ${direction} data`);
@@ -208,24 +219,32 @@ const DataSelectionTable = ({
           <button
             type="button"
             onClick={() => handleBulkDownload("upstream")}
-            disabled={activeDownload !== null || !upstreamSubids?.length}
+            disabled={
+              activeDownload !== null || (upstreamSubids?.length ?? 0) <= 1
+            }
           >
             {activeDownload === "upstream"
               ? "Downloading upstream..."
-              : upstreamSubids === null
+              : upstreamSubids == null
                 ? "Loading upstream network..."
-                : `Download upstream NetCDF (${upstreamSubids.length})`}
+                : upstreamSubids.length <= 1
+                  ? "No upstream outlets"
+                  : `Download upstream NetCDF (${upstreamSubids.length})`}
           </button>
           <button
             type="button"
             onClick={() => handleBulkDownload("downstream")}
-            disabled={activeDownload !== null || !downstreamSubids?.length}
+            disabled={
+              activeDownload !== null || (downstreamSubids?.length ?? 0) <= 1
+            }
           >
             {activeDownload === "downstream"
               ? "Downloading downstream..."
-              : downstreamSubids === null
+              : downstreamSubids == null
                 ? "Loading downstream network..."
-                : `Download downstream NetCDF (${downstreamSubids.length})`}
+                : downstreamSubids.length <= 1
+                  ? "No downstream outlets"
+                  : `Download downstream NetCDF (${downstreamSubids.length})`}
           </button>
         </div>
         <small className="network-download-note">

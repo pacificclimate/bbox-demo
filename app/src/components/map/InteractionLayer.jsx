@@ -7,7 +7,8 @@ import {
   fetchDownstreamNetwork,
   fetchUpstreamNetwork,
 } from "../../services/streamNetApi.js";
-import { downloadNetworkGeoJson } from "../../services/geoJsonApi.js";
+import { fetchNetworkGeoJson } from "../../services/geoJsonApi.js";
+import { downloadBlob } from "../../utils/downloadFile.js";
 import { interactiveCanvasTile } from "./vectorGridCanvasRenderer.js";
 import "./InteractionLayer.css";
 
@@ -38,6 +39,11 @@ const enableNetworkGeoJsonLink = ({
   subids,
   controllers,
 }) => {
+  if (subids.length <= 1) {
+    setPopupLinkUnavailable(link, `No ${direction} outlets`);
+    return;
+  }
+
   link.textContent = `${direction[0].toUpperCase()}${direction.slice(1)} GeoJSON (${subids.length})`;
   link.removeAttribute("aria-disabled");
   link.style.color = "blue";
@@ -54,11 +60,12 @@ const enableNetworkGeoJsonLink = ({
     controllers.add(controller);
 
     try {
-      await downloadNetworkGeoJson({
+      const { blob, filename } = await fetchNetworkGeoJson({
         selectedSubid,
         direction,
         signal: controller.signal,
       });
+      downloadBlob(blob, filename);
       link.textContent = `${direction[0].toUpperCase()}${direction.slice(1)} GeoJSON (${subids.length})`;
     } catch (error) {
       if (error.name !== "AbortError") {

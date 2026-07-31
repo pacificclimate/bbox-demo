@@ -25,7 +25,7 @@ const fetchNetworkPage = async ({
   return page;
 };
 
-export const downloadNetworkGeoJson = async ({
+export const fetchNetworkGeoJson = async ({
   selectedSubid,
   direction,
   signal,
@@ -35,6 +35,7 @@ export const downloadNetworkGeoJson = async ({
   let offset = 0;
   let numberMatched = null;
   let hasFeatures = false;
+  let featureCount = 0;
 
   while (numberMatched === null || offset < numberMatched) {
     const page = await fetchNetworkPage({
@@ -50,6 +51,7 @@ export const downloadNetworkGeoJson = async ({
       hasFeatures = true;
     }
 
+    featureCount += page.features.length;
     offset += page.features.length;
     const reportedTotal = Number(page.numberMatched);
     numberMatched = Number.isFinite(reportedTotal)
@@ -63,19 +65,18 @@ export const downloadNetworkGeoJson = async ({
     }
   }
 
+  if (featureCount <= 1) {
+    throw new Error(`No ${direction} outlets found`);
+  }
+
   blobParts.push("]}");
   const blob = new Blob(blobParts, {
     type: "application/geo+json",
   });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = `${selectedSubid}_${direction}.geojson`.replace(
+  const filename = `${selectedSubid}_${direction}.geojson`.replace(
     /[^A-Za-z0-9_.-]+/g,
     "_"
   );
-  document.body.appendChild(anchor);
-  anchor.click();
-  document.body.removeChild(anchor);
-  setTimeout(() => URL.revokeObjectURL(url), 0);
+
+  return { blob, filename };
 };

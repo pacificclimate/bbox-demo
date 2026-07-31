@@ -81,7 +81,7 @@ export const getApiVariable = async (displayName) => {
   )?.[0];
 };
 
-export const downloadTimeseries = async (outletId, selections) => {
+export const getTimeseriesDownload = async (outletId, selections) => {
   const [allTimeseries, apiVariable] = await Promise.all([
     fetchTimeseriesForOutlet(outletId),
     getApiVariable(selections.variable),
@@ -96,22 +96,19 @@ export const downloadTimeseries = async (outletId, selections) => {
 
   if (!timeseriesId) throw new Error("No matching timeseries found");
 
-  const url = `${BASE_URL}/outlets/${outletId}/timeseries/${timeseriesId}/data`;
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${outletId}_${selections.model}_${selections.scenario}_${apiVariable}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  return {
+    url: `${BASE_URL}/outlets/${outletId}/timeseries/${timeseriesId}/data`,
+    filename: `${outletId}_${selections.model}_${selections.scenario}_${apiVariable}.csv`,
+  };
 };
 
-export const downloadBulkTimeseries = async (
+export const fetchBulkTimeseries = async (
   outletId,
   direction,
   subids,
   selections
 ) => {
-  if (subids.length === 0) throw new Error(`No ${direction} outlets found`);
+  if (subids.length <= 1) throw new Error(`No ${direction} outlets found`);
 
   const apiVariable = await getApiVariable(selections.variable);
   if (!apiVariable) throw new Error("No matching variable found");
@@ -133,15 +130,8 @@ export const downloadBulkTimeseries = async (
     throw new Error(details || `Bulk download failed (${response.status})`);
   }
 
-  const blob = await response.blob();
   const filename = `${outletId}_${direction}_${selections.model}_${selections.scenario}_${apiVariable}.nc`
     .replace(/[^A-Za-z0-9_.-]+/g, "_");
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 0);
+
+  return { blob: await response.blob(), filename };
 };
