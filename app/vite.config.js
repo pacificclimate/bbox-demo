@@ -9,10 +9,13 @@ export default defineConfig({
 
     EnvironmentPlugin({
       REACT_APP_BC_BASE_MAP_TILES_URL:
-       "https://swarm.pacificclimate.org/tiles/bc-albers-lite/{z}/{x}/{y}.png",
+       "https://services.pacificclimate.org/tiles/bc-albers-lite/{z}/{x}/{y}.png",
     }),
   ],
   base: "/chyp",
+  build: {
+    sourcemap: true,
+  },
   // Local Dev only
   server: {
     warmup: {
@@ -25,5 +28,15 @@ export default defineConfig({
     },
     port: 3000,
     host: true,
+    proxy: {
+      "/bbox-server": {
+        target: "https://beehive.pacificclimate.org",
+        changeOrigin: true,
+      },
+      "/hydromosaic": {
+        target: "https://beehive.pacificclimate.org",
+        changeOrigin: true,
+      },
+    },
   },
 });

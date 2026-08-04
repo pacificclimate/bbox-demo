@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, memo } from "react";
 import { circleMarker } from "leaflet";
-import L from "leaflet";
 import proj4 from "proj4";
 import { useMap } from "react-leaflet";
 import "./PointPlotter.css";
@@ -165,7 +164,11 @@ const PointPlotter = () => {
             setCoords((prev) => ({ ...prev, y: e.target.value }))
           }
         />
-        <select value={projType} onChange={(e) => setProjType(e.target.value)}>
+        <select
+          aria-label="Coordinate reference system"
+          value={projType}
+          onChange={(e) => setProjType(e.target.value)}
+        >
           <option value="albers">BC Albers</option>
           <option value="mercator">Web Mercator</option>
           <option value="wgs84">WGS84 (Latitude/Longitude)</option>

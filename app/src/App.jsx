@@ -1,5 +1,9 @@
 import MapComponent from "./components/map/MapComponent.jsx";
 
-const App = () => <MapComponent />;
+const App = () => (
+  <main>
+    <MapComponent />
+  </main>
+);
 
 export default App;
