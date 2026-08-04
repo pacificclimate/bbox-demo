@@ -1,5 +1,14 @@
 # Release Notes
 
+## 2.2.0
+
+_04-Aug-2026_
+
+- Add Peace and Columbia region data (#32)
+- Improve performance and accessibility (#35)
+- Add controlled service startup and readiness checks (#36)
+- Add upstream and downstream network downloads (#39)
+
 ## 2.1.0
 
 _26-May-2026_
