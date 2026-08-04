@@ -3,10 +3,82 @@ import { useState, useRef, useCallback, useEffect, memo, lazy, Suspense } from "
 import PropTypes from "prop-types";
 import L from "leaflet";
 import "leaflet.vectorgrid";
-import { fetchDownstreams, fetchUpstreams } from "../../services/streamNetApi.js";
+import {
+  fetchDownstreamNetwork,
+  fetchUpstreamNetwork,
+} from "../../services/streamNetApi.js";
+import { fetchNetworkGeoJson } from "../../services/geoJsonApi.js";
+import { downloadBlob } from "../../utils/downloadFile.js";
 import { interactiveCanvasTile } from "./vectorGridCanvasRenderer.js";
+import "./InteractionLayer.css";
 
 const DataSelectionTable = lazy(() => import("../data/DataSelectionTable.jsx"));
+
+const makePopupLink = (label) => {
+  const link = document.createElement("a");
+  link.href = "#";
+  link.textContent = label;
+  link.style.display = "block";
+  link.style.color = "blue";
+  link.style.textDecoration = "underline";
+  link.style.marginTop = "4px";
+  return link;
+};
+
+const setPopupLinkUnavailable = (link, label) => {
+  link.textContent = label;
+  link.setAttribute("aria-disabled", "true");
+  link.style.color = "#666";
+  link.style.pointerEvents = "none";
+};
+
+const enableNetworkGeoJsonLink = ({
+  link,
+  selectedSubid,
+  direction,
+  subids,
+  controllers,
+}) => {
+  if (subids.length <= 1) {
+    setPopupLinkUnavailable(link, `No ${direction} outlets`);
+    return;
+  }
+
+  link.textContent = `${direction[0].toUpperCase()}${direction.slice(1)} GeoJSON (${subids.length})`;
+  link.removeAttribute("aria-disabled");
+  link.style.color = "blue";
+  link.style.pointerEvents = "auto";
+
+  link.addEventListener("click", async (event) => {
+    event.preventDefault();
+    if (link.dataset.downloading === "true") return;
+
+    link.dataset.downloading = "true";
+    link.textContent = `Preparing ${direction} GeoJSON...`;
+    link.style.pointerEvents = "none";
+    const controller = new AbortController();
+    controllers.add(controller);
+
+    try {
+      const { blob, filename } = await fetchNetworkGeoJson({
+        selectedSubid,
+        direction,
+        signal: controller.signal,
+      });
+      downloadBlob(blob, filename);
+      link.textContent = `${direction[0].toUpperCase()}${direction.slice(1)} GeoJSON (${subids.length})`;
+    } catch (error) {
+      if (error.name !== "AbortError") {
+        console.error(`Failed to download ${direction} GeoJSON:`, error);
+        link.textContent = `Failed. Retry ${direction} GeoJSON`;
+      }
+    } finally {
+      controllers.delete(controller);
+      delete link.dataset.downloading;
+      link.style.pointerEvents = "auto";
+    }
+  });
+};
 
 const InteractionLayer = ({ baseStyles, interactionStyles }) => {
   const stateRef = useRef({
@@ -20,10 +92,21 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
   });
   const vectorTileLayerRef = useRef(null);
   const mapRef = useRef(null);
-  const popup = useRef(L.popup({ className: "custom-popup", autoPan: false }));
+  const popup = useRef(
+    L.popup({
+      className: "custom-popup",
+      autoPan: false,
+      minWidth: 160,
+      maxWidth: 230,
+    })
+  );
 
   const [showDataTable, setShowDataTable] = useState(false);
   const [selectedSubId, setSelectedSubId] = useState(null);
+  const [networkSubids, setNetworkSubids] = useState({
+    upstream: null,
+    downstream: null,
+  });
 
   const updateCursor = (() => {
     let lastCursor = null;
@@ -162,6 +245,7 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
 
       const { uid, properties, layerType } = getFeatureInfo(event);
       setSelectedSubId(properties.subid);
+      setNetworkSubids({ upstream: null, downstream: null });
       setShowDataTable(true);
       // Reset previous clicked feature if exists
       if (stateRef.current.clickedFeature && vectorTileLayerRef.current) {
@@ -181,6 +265,8 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
         mapRef.current.closePopup(stateRef.current.currentPopup);
       }
 
+      let networkGeoJsonLinks = null;
+      const geoJsonDownloadControllers = new Set();
       try {
         const collection = layerType === "lakes" ? "lakes" : "rivers";
         const response = await fetch(
@@ -197,20 +283,51 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
         });
         const url = URL.createObjectURL(blob);
 
+        const popupContent = document.createElement("div");
+        popupContent.className = "geojson-download-popup";
+
+        const heading = document.createElement("strong");
+        heading.className = "geojson-download-popup__heading";
+        heading.textContent = "Download GeoJSON";
+        popupContent.appendChild(heading);
+
+        const subidLine = document.createElement("div");
+        subidLine.className = "geojson-download-popup__subid";
+        const subidLabel = document.createElement("span");
+        subidLabel.textContent = "SubId:";
+        subidLine.append(subidLabel, ` ${properties.subid}`);
+        popupContent.appendChild(subidLine);
+
+        const selectedLink = makePopupLink("Selected GeoJSON");
+        selectedLink.href = url;
+        selectedLink.download = `${properties.subid}.geojson`;
+        popupContent.appendChild(selectedLink);
+
+        const upstreamLink = makePopupLink("Loading upstream network...");
+        const downstreamLink = makePopupLink("Loading downstream network...");
+        setPopupLinkUnavailable(upstreamLink, "Loading upstream network...");
+        setPopupLinkUnavailable(downstreamLink, "Loading downstream network...");
+        popupContent.append(upstreamLink, downstreamLink);
+        networkGeoJsonLinks = {
+          upstream: upstreamLink,
+          downstream: downstreamLink,
+        };
+
         popup.current
           .setLatLng(event.latlng)
-          .setContent(
-            `
-            <div style="max-width: 250px; word-wrap: break-word;">
-              <strong>SubId:</strong> ${properties.subid} <br />
-              <a href="${url}" download="${properties.subid}.geojson" style="color: blue; text-decoration: underline;">Download GeoJSON</a>
-            </div>
-          `
-          )
+          .setContent(popupContent)
           .openOn(mapRef.current);
+        stateRef.current.currentPopup = popup.current;
 
-        popup.current.on("remove", () => {
+        popup.current.once("remove", () => {
           URL.revokeObjectURL(url);
+          for (const controller of geoJsonDownloadControllers) {
+            controller.abort();
+          }
+          geoJsonDownloadControllers.clear();
+          if (stateRef.current.currentPopup === popup.current) {
+            stateRef.current.currentPopup = null;
+          }
         });
       } catch (error) {
         console.error("Error fetching GeoJSON:", error);
@@ -228,8 +345,13 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
       // Accordingly, both sets of features are cleared and highlighted in tandem.
       try {
         // fetch upstream and downstream features
-        const downstreamList = await fetchDownstreams(properties.subid, properties.uid);
-        const upstreamList = await fetchUpstreams(properties.subid, properties.uid);
+        const [downstreamNetwork, upstreamNetwork] = await Promise.all([
+          fetchDownstreamNetwork(properties.subid, properties.uid),
+          fetchUpstreamNetwork(properties.subid, properties.uid),
+        ]);
+
+        // A second feature may have been clicked while these requests ran.
+        if (stateRef.current.clickedFeature !== uid) return;
 
         // clear old highlighted upstream and downstream features
         if (stateRef.current.downstreamFeatures.length > 0 && vectorTileLayerRef.current) {
@@ -248,16 +370,49 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
         }
 
         // highlight new upstream and downstream features
-        stateRef.current.downstreamFeatures = downstreamList;
+        stateRef.current.downstreamFeatures = downstreamNetwork.uids;
         for (const uid of stateRef.current.downstreamFeatures) {
           vectorTileLayer.setFeatureStyle(uid, interactionStyles.highlight["downstream"]);
         }
-        stateRef.current.upstreamFeatures = upstreamList;
+        stateRef.current.upstreamFeatures = upstreamNetwork.uids;
         for (const uid of stateRef.current.upstreamFeatures) {
           vectorTileLayer.setFeatureStyle(uid, interactionStyles.highlight["upstream"]);
         }
+        setNetworkSubids({
+          upstream: upstreamNetwork.subids,
+          downstream: downstreamNetwork.subids,
+        });
+        if (networkGeoJsonLinks) {
+          enableNetworkGeoJsonLink({
+            link: networkGeoJsonLinks.upstream,
+            selectedSubid: properties.subid,
+            direction: "upstream",
+            subids: upstreamNetwork.subids,
+            controllers: geoJsonDownloadControllers,
+          });
+          enableNetworkGeoJsonLink({
+            link: networkGeoJsonLinks.downstream,
+            selectedSubid: properties.subid,
+            direction: "downstream",
+            subids: downstreamNetwork.subids,
+            controllers: geoJsonDownloadControllers,
+          });
+        }
       } catch (error) {
         console.error("Error fetching upstream and downstream features:", error);
+        if (stateRef.current.clickedFeature === uid) {
+          setNetworkSubids({ upstream: [], downstream: [] });
+          if (networkGeoJsonLinks) {
+            setPopupLinkUnavailable(
+              networkGeoJsonLinks.upstream,
+              "Upstream GeoJSON unavailable"
+            );
+            setPopupLinkUnavailable(
+              networkGeoJsonLinks.downstream,
+              "Downstream GeoJSON unavailable"
+            );
+          }
+        }
       }
     };
 
@@ -298,6 +453,8 @@ const InteractionLayer = ({ baseStyles, interactionStyles }) => {
         <Suspense fallback={null}>
           <DataSelectionTable
             featureId={selectedSubId}
+            upstreamSubids={networkSubids.upstream}
+            downstreamSubids={networkSubids.downstream}
             onClose={handleCloseDataTable}
           />
         </Suspense>

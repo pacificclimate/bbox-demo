@@ -57,3 +57,13 @@ jobs:
           tags: |
             pcic/chyp-server:${{ github.ref_name }}
             ${{ github.ref_name == 'main' && 'pcic/chyp-server:latest' || '' }}
+
+      - name: Build and Publish Varnish
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: docker/varnish/Dockerfile
+          push: true
+          tags: |
+            pcic/chyp-varnish:${{ github.ref_name }}
+            ${{ github.ref_name == 'main' && 'pcic/chyp-varnish:latest' || '' }}
