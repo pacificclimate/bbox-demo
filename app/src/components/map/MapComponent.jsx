@@ -3,6 +3,7 @@ import { useRef, useEffect, lazy, Suspense } from "react";
 import InteractionLayer from "./InteractionLayer.jsx";
 import LogoBox from "../info/LogoBox.jsx";
 import FwaNameSearch from "./FwaNameSearch.jsx";
+import NetworkLegend from "./NetworkLegend.jsx";
 import { baseStyles, interactionStyles, fwaStyles } from "../../styles.js";
 
 const PointPlotter = lazy(() => import("./PointPlotter.jsx"));
@@ -79,6 +80,7 @@ const MapComponent = () => {
         <PointPlotter map={mapRef} />
       </Suspense>
       <FwaNameSearch fwaStyles={fwaStyles} />
+      <NetworkLegend highlightStyles={interactionStyles.highlight} />
     </BCBaseMap>
   );
 };

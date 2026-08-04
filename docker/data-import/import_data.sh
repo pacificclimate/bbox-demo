@@ -126,6 +126,7 @@ import_dataset() {
     -nln "$table" \
     -lco GEOMETRY_NAME=geom \
     -lco FID=fid \
+    -lco SPATIAL_INDEX=NONE \
     -a_srs EPSG:3005 \
     "$@" \
     -addfields
@@ -171,6 +172,8 @@ psql "$DB_DSN" -v ON_ERROR_STOP=1 <<-EOSQL
 
   CREATE INDEX rivers_next_geom_idx ON rivers_next USING GIST(geom);
   CREATE INDEX lakes_next_geom_idx ON lakes_next USING GIST(geom);
+  CREATE INDEX rivers_next_subid_idx ON rivers_next(subid);
+  CREATE INDEX lakes_next_subid_idx ON lakes_next(subid);
   VACUUM ANALYZE rivers_next;
   VACUUM ANALYZE lakes_next;
 EOSQL
@@ -268,6 +271,8 @@ psql "$DB_DSN" \
 
   ALTER INDEX rivers_next_geom_idx RENAME TO rivers_geom_idx;
   ALTER INDEX lakes_next_geom_idx RENAME TO lakes_geom_idx;
+  ALTER INDEX rivers_next_subid_idx RENAME TO rivers_subid_idx;
+  ALTER INDEX lakes_next_subid_idx RENAME TO lakes_subid_idx;
   ALTER INDEX upstreams_next_uid_idx RENAME TO upstream_uid_idx;
   ALTER INDEX downstreams_next_uid_idx RENAME TO downstream_uid_idx;
 

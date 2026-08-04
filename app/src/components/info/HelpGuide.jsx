@@ -129,7 +129,10 @@ const HelpGuide = () => {
                   <li>
                     Choose model, scenario, and variable from dropdown menus
                   </li>
-                  <li>Click &quot;Download CSV&quot; to get timeseries data</li>
+                  <li>
+                    Download the selected segment as CSV, or its complete
+                    upstream/downstream network as a multi-outlet NetCDF
+                  </li>
                 </ol>
               </section>
 

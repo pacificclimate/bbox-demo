@@ -7,7 +7,10 @@
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   z-index: 1000;
+  width: 380px;
+  max-width: calc(100vw - 32px);
   min-width: 300px;
+  box-sizing: border-box;
   font-family: Arial, sans-serif;
 }
 
@@ -18,6 +21,9 @@
 }
 
 .data-selection select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 8px 12px;
   border: 1px solid #ccc;
   border-radius: 8px;
@@ -42,6 +48,24 @@
 
 .data-selection button:hover {
   background-color: #0056b3;
+}
+
+.data-selection button:disabled {
+  background-color: #7b8a99;
+  cursor: not-allowed;
+}
+
+.data-selection .network-downloads {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid #bbb;
+}
+
+.data-selection .network-download-note {
+  color: #444;
+  text-align: center;
 }
 
 .data-selection .header {

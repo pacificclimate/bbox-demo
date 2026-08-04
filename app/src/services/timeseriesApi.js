@@ -81,7 +81,7 @@ export const getApiVariable = async (displayName) => {
   )?.[0];
 };
 
-export const downloadTimeseries = async (outletId, selections) => {
+export const getTimeseriesDownload = async (outletId, selections) => {
   const [allTimeseries, apiVariable] = await Promise.all([
     fetchTimeseriesForOutlet(outletId),
     getApiVariable(selections.variable),
@@ -96,11 +96,42 @@ export const downloadTimeseries = async (outletId, selections) => {
 
   if (!timeseriesId) throw new Error("No matching timeseries found");
 
-  const url = `${BASE_URL}/outlets/${outletId}/timeseries/${timeseriesId}/data`;
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${outletId}_${selections.model}_${selections.scenario}_${apiVariable}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  return {
+    url: `${BASE_URL}/outlets/${outletId}/timeseries/${timeseriesId}/data`,
+    filename: `${outletId}_${selections.model}_${selections.scenario}_${apiVariable}.csv`,
+  };
+};
+
+export const fetchBulkTimeseries = async (
+  outletId,
+  direction,
+  subids,
+  selections
+) => {
+  if (subids.length <= 1) throw new Error(`No ${direction} outlets found`);
+
+  const apiVariable = await getApiVariable(selections.variable);
+  if (!apiVariable) throw new Error("No matching variable found");
+
+  const response = await fetch(`${BASE_URL}/bulk-downloads`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      subids,
+      model: selections.model,
+      scenario: selections.scenario,
+      variable: apiVariable,
+      format: "netcdf",
+    }),
+  });
+
+  if (!response.ok) {
+    const details = await response.text();
+    throw new Error(details || `Bulk download failed (${response.status})`);
+  }
+
+  const filename = `${outletId}_${direction}_${selections.model}_${selections.scenario}_${apiVariable}.nc`
+    .replace(/[^A-Za-z0-9_.-]+/g, "_");
+
+  return { blob: await response.blob(), filename };
 };

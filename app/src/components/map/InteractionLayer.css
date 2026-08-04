@@ -1,0 +1,28 @@
+.custom-popup .leaflet-popup-content-wrapper,
+.custom-popup .leaflet-popup-tip {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.custom-popup .leaflet-popup-content {
+  margin: 10px 14px;
+}
+
+.geojson-download-popup {
+  line-height: 1.35;
+}
+
+.geojson-download-popup__heading {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 14px;
+}
+
+.geojson-download-popup__subid {
+  margin-bottom: 6px;
+  color: #444;
+  font-size: 12px;
+}
+
+.geojson-download-popup a {
+  white-space: nowrap;
+}
