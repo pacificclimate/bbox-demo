@@ -145,6 +145,12 @@ import_dataset Peace_3005_rivers.gpkg MULTILINESTRING rivers_next -append
 echo "Importing Columbia rivers"
 import_dataset Columbia_3005_rivers.gpkg MULTILINESTRING rivers_next -append
 
+echo "Importing Kettle rivers"
+import_dataset Kettle_3005_rivers.gpkg MULTILINESTRING rivers_next -append
+
+echo "Importing Okanagan rivers"
+import_dataset Okanagan_3005_rivers.gpkg MULTILINESTRING rivers_next -append
+
 echo "Rivers data imported. Importing lakes data..."
 echo "Importing Fraser lakes"
 import_dataset Fraser_3005_lakes.gpkg MULTIPOLYGON lakes_next
@@ -157,6 +163,12 @@ import_dataset Peace_3005_lakes.gpkg MULTIPOLYGON lakes_next -append
 
 echo "Importing Columbia lakes"
 import_dataset Columbia_3005_lakes.gpkg MULTIPOLYGON lakes_next -append
+
+echo "Importing Kettle lakes"
+import_dataset Kettle_3005_lakes.gpkg MULTIPOLYGON lakes_next -append
+
+echo "Importing Okanagan lakes"
+import_dataset Okanagan_3005_lakes.gpkg MULTIPOLYGON lakes_next -append
 
 echo "Updating tables and adding indices..."
 psql "$DB_DSN" -v ON_ERROR_STOP=1 <<-EOSQL
