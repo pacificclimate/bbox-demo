@@ -3,9 +3,9 @@
 {
 	"name": "Node.js & TypeScript",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
+	"image": "mcr.microsoft.com/devcontainers/typescript-node:24-bookworm",
 	"features": {
-		"ghcr.io/devcontainers/features/docker-in-docker:2": {
+		"ghcr.io/devcontainers/features/docker-in-docker:4.1.0": {
 			"moby": true,
 			"azureDnsAutoDetection": true,
 			"installDockerBuildx": true,
@@ -22,7 +22,7 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "cd app && npm install",
+	"postCreateCommand": "cd app && sudo npm install --global npm@12 && echo \"Node: $(node --version)\" && echo \"npm:  $(npm --version)\" && test \"$(node --version | cut -d. -f1 | tr -d v)\" = \"24\" && test \"$(npm --version | cut -d. -f1)\" = \"12\" && npm ci",
 
 	// Configure tool-specific properties.
 	// "customizations": {},
