@@ -1,5 +1,12 @@
 # Release Notes
 
+## 2.3.0
+
+_04-Sep-2026_
+
+- Add Kettle and Okanagan region data (#42)
+- Add npm policy, node 24, pin CI (#41)
+
 ## 2.2.0
 
 _04-Aug-2026_
