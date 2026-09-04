@@ -9,17 +9,21 @@ on:
 jobs:
   publish-images:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           username: ${{ secrets.pcicdevops_at_dockerhub_username }}
           password: ${{ secrets.pcicdevops_at_dockerhub_password }}
 
       - name: Build and Publish App
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: .
           file: docker/app/Dockerfile
@@ -29,7 +33,7 @@ jobs:
             ${{ github.ref_name == 'main' && 'pcic/chyp-app:latest' || '' }}
 
       - name: Build and Publish Data Import
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: .
           file: docker/data-import/Dockerfile
@@ -39,7 +43,7 @@ jobs:
             ${{ github.ref_name == 'main' && 'pcic/chyp-data-import:latest' || '' }}
 
       - name: Build and Publish PostGIS
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: .
           file: docker/PostGIS/Dockerfile
@@ -49,7 +53,7 @@ jobs:
             ${{ github.ref_name == 'main' && 'pcic/chyp-postgis:latest' || '' }}
 
       - name: Build and Publish BBOX server
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: .
           file: docker/BBOX/Dockerfile
@@ -59,7 +63,7 @@ jobs:
             ${{ github.ref_name == 'main' && 'pcic/chyp-server:latest' || '' }}
 
       - name: Build and Publish Varnish
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: .
           file: docker/varnish/Dockerfile
